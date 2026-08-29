@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LabGram</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f0f4f8;font-family:Arial,sans-serif;direction:rtl;padding:20px}
+.container{max-width:400px;margin:50px auto;background:#fff;border-radius:16px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+.logo{font-size:28px;font-weight:900;color:#2563eb;text-align:center}
+.logo span{color:#3b82f6}
+.sub{text-align:center;color:#64748b;margin:8px 0 24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:700;font-size:13px;margin-bottom:4px}
+.field input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none}
+.field input:focus{border-color:#2563eb}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:hover{background:#3b82f6}
+.error{color:#ef4444;font-size:13px;min-height:20px;margin:6px 0}
+.success{color:#22c55e;font-size:13px;margin:6px 0}
+.link{color:#2563eb;font-weight:700;cursor:pointer}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;z-index:999}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">Lab<span>Gram</span></div>
+  <p class="sub">مجتمع المختبرات والمهنيين الصحيين</p>
+  
+  <div id="authForm">
+    <div class="field">
+      <label>اسم المستخدم</label>
+      <input id="username" placeholder="mam87">
+    </div>
+    <div class="field">
+      <label>الاسم الكامل</label>
+      <input id="display" placeholder="اسمك الكامل">
+    </div>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input id="email" type="email" placeholder="example@email.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input id="pass" type="password" placeholder="6 أحرف على الأقل">
+    </div>
+    <div id="err" class="error"></div>
+    <div id="success" class="success"></div>
+    <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">
+      لديك حساب؟ <span class="link" onclick="showLogin()">تسجيل الدخول</span>
+    </div>
+  </div>
+
+  <div id="loginForm" class="hidden">
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input id="loginEmail" type="email" placeholder="example@email.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input id="loginPass" type="password" placeholder="••••••••">
+    </div>
+    <div id="loginErr" class="error"></div>
+    <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">
+      ليس لديك حساب؟ <span class="link" onclick="showRegister()">إنشاء حساب</span>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ============================================================
+// SUPABASE - إعدادات
+// ============================================================
+
+const SUPABASE_URL = 'https://ualumobbhukgmjbznhea.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Rq7Jp7tlZO5ugDORHcCebQ_NZJnVXrZ';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// دوال مساعدة
+// ============================================================
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(window._toast);
+  window._toast = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function showLogin(){
+  document.getElementById('authForm').classList.add('hidden');
+  document.getElementById('loginForm').classList.remove('hidden');
+}
+
+function showRegister(){
+  document.getElementById('authForm').classList.remove('hidden');
+  document.getElementById('loginForm').classList.add('hidden');
+}
+
+// ============================================================
+// دالة التسجيل - جديدة ومبسطة
+// ============================================================
+
+async function register(){
+  const username = document.getElementById('username').value.trim();
+  const display = document.getElementById('display').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('pass').value;
+  const err = document.getElementById('err');
+  const success = document.getElementById('success');
+  
+  err.textContent = '';
+  success.textContent = '';
+  
+  // تحقق من البيانات
+  if(username.length < 3){
+    err.textContent = 'اسم المستخدم 3 أحرف على الأقل';
+    return;
+  }
+  if(!display){
+    err.textContent = 'أدخل اسمك الكامل';
+    return;
+  }
+  if(!email){
+    err.textContent = 'أدخل البريد الإلكتروني';
+    return;
+  }
+  if(pass.length < 6){
+    err.textContent = 'كلمة المرور 6 أحرف على الأقل';
+    return;
+  }
+  
+  try {
+    toast('جاري إنشاء الحساب...');
+    
+    // 1. إنشاء الحساب
+    const { data, error } = await sb.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: {
+          username: username,
+          display_name: display,
+          specialty: 'General',
+          bio: ''
+        }
+      }
+    });
+    
+    if(error){
+      err.textContent = 'خطأ: ' + error.message;
+      toast('فشل إنشاء الحساب ❌');
+      return;
+    }
+    
+    success.textContent = '✅ تم إنشاء الحساب بنجاح!';
+    toast('تم إنشاء الحساب! 🎉');
+    
+    // 2. محاولة تسجيل الدخول تلقائياً
+    setTimeout(async () => {
+      const { error: loginError } = await sb.auth.signInWithPassword({
+        email: email,
+        password: pass
+      });
+      
+      if(loginError){
+        err.textContent = 'تم إنشاء الحساب! جرب تسجيل الدخول الآن';
+        showLogin();
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPass').value = pass;
+        return;
+      }
+      
+      toast('تم تسجيل الدخول! 🎉');
+      window.location.href = 'feed.html'; // روح للصفحة الرئيسية
+      
+    }, 2000);
+    
+  } catch(e){
+    err.textContent = 'خطأ غير متوقع: ' + e.message;
+    toast('حدث خطأ ❌');
+  }
+}
+
+// ============================================================
+// دالة تسجيل الدخول
+// ============================================================
+
+async function login(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  err.textContent = '';
+  
+  if(!email || !pass){
+    err.textContent = 'أدخل البريد وكلمة المرور';
+    return;
+  }
+  
+  try {
+    toast('جاري تسجيل الدخول...');
+    
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: email,
+      password: pass
+    });
+    
+    if(error){
+      err.textContent = 'خطأ: ' + error.message;
+      toast('فشل تسجيل الدخول ❌');
+      return;
+    }
+    
+    toast('مرحباً بك! 🎉');
+    window.location.href = 'feed.html';
+    
+  } catch(e){
+    err.textContent = 'خطأ غير متوقع: ' + e.message;
+    toast('حدث خطأ ❌');
+  }
+}
+
+// ============================================================
+// التحقق من الجلسة عند فتح الصفحة
+// ============================================================
+
+async function checkSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    // إذا كان مسجل دخول، روح للصفحة الرئيسية
+    window.location.href = 'feed.html';
+  }
+}
+
+checkSession();
+
+// ============================================================
+// عرض نموذج تسجيل الدخول افتراضياً
+// ============================================================
+
+// ابدأ بصفحة التسجيل
+showRegister();
+
+// للاختبار: ضع بريد مام في حقل البريد تلقائياً
+// document.getElementById('email').value = 'mam87soudi@gmail.com';
+// document.getElementById('username').value = 'mam87';
+// document.getElementById('display').value = 'Mam87 Soudi';
+
+console.log('✅ LabGram جاهز!');
+console.log('📧 استخدم mam87soudi@gmail.com للتسجيل');
+</script>
+
+</body>
+</html>
