@@ -1023,12 +1023,26 @@ function renderSettings(){
       <div class="covers">${Object.entries(COVERS).map(([k,v])=>`<button type="button" data-k="${k}" class="${(me.cover||'aurora')===k?'on':''}" style="background:${v}" onclick="document.querySelectorAll('.covers button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="${k}"></button>`).join('')}</div>
       <div class="msg" id="fMsg"></div>
       <button class="btn btn-primary btn-block" id="fBtn" onclick="saveSettings()">حفظ التغييرات</button>
+      <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px">
+        <div class="field"><label>تغيير كلمة المرور</label><input class="input" id="sPass" type="password" dir="ltr" placeholder="كلمة المرور الجديدة (6 أحرف على الأقل)" autocomplete="new-password"></div>
+        <div class="msg" id="pMsg"></div>
+        <button class="btn btn-ghost btn-block" id="pBtn" onclick="changePass()">تحديث كلمة المرور</button>
+      </div>
       <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
         <button class="btn btn-ghost" style="flex:1" onclick="toggleTheme()">${ic(theme()==='dark'?'sun':'moon')} ${theme()==='dark'?'الوضع النهاري':'الوضع الليلي'}</button>
         <button class="btn btn-danger" style="flex:1" onclick="logout()">${ic('out')} تسجيل الخروج</button>
       </div>
     </div>`,{aside:false});
   $('#avFile').onchange=e=>{const f=e.target.files[0];if(!f)return;newAvatar=f;$('#avPrev').innerHTML=`<img class="av" style="--s:84px" src="${URL.createObjectURL(f)}">`};
+}
+async function changePass(){
+  const p=$('#sPass').value, m=$('#pMsg'), b=$('#pBtn');
+  if(p.length<6){m.className='msg err';m.textContent='6 أحرف على الأقل';return}
+  b.disabled=true;
+  const {error}=await sb.auth.updateUser({password:p});
+  b.disabled=false;
+  if(error){m.className='msg err';m.textContent=authErr(error);return}
+  $('#sPass').value=''; m.className='msg ok'; m.textContent='✅ تم تحديث كلمة المرور'; toast('تم تحديث كلمة المرور ✅');
 }
 async function saveSettings(){
   const username=$('#sUser').value.trim();
