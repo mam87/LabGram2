@@ -108,6 +108,35 @@ with sync_playwright() as p:
     check('edit: comments stay visible after editing on post page', pg.locator('.cmt').count() == c0 + 1 and pg.locator('#cIn').count() == 1)
     check('edit: no JS errors', not pg._errs, '; '.join(pg._errs))
 
+    # ---------- REPLIES ----------
+    pg = page()
+    p1 = pg.evaluate("__DB.lg_posts[0].id"); top = 'c0000000-0000-0000-0000-000000000001'
+    pg.goto(URL + f'?signed#/p/{p1}'); pg.wait_for_timeout(600)
+    check('reply: existing reply rendered inside its thread', pg.locator(f'#r-{top} .cmt.reply').count() == 1)
+    check('reply: reply form hidden until requested', pg.locator(f'#rf-{top}.hidden').count() == 1)
+    pg.click(f'#c-{top} button:has-text("رد")'); pg.wait_for_timeout(100)
+    check('reply: form opens with name in placeholder', 'رد على' in (pg.get_attribute(f'#ri-{top}', 'placeholder') or ''))
+    n0 = pg.inner_text(f'#post-{p1} a.act span')
+    pg.fill(f'#ri-{top}', 'رد تجريبي'); pg.click(f'#rb-{top}'); pg.wait_for_timeout(300)
+    row = pg.evaluate("__DB.lg_comments.find(c=>c.body=='رد تجريبي')")
+    check('reply: saved with parent_id of the thread', row and row['parent_id'] == top)
+    check('reply: appended under the thread and form closed', pg.locator(f'#r-{top} .cmt.reply').count() == 2 and pg.locator(f'#rf-{top}.hidden').count() == 1)
+    check('reply: comment counter incremented', pg.inner_text(f'#post-{p1} a.act span') != n0, f"{n0}->{pg.inner_text(f'#post-{p1} a.act span')}")
+    nested = 'c0000000-0000-0000-0000-000000000002'
+    pg.click(f'#c-{nested} button:has-text("رد")'); pg.fill(f'#ri-{top}', 'رد على رد'); pg.click(f'#rb-{top}'); pg.wait_for_timeout(300)
+    row = pg.evaluate("__DB.lg_comments.find(c=>c.body=='رد على رد')")
+    check('reply: replying to a reply stays one level (same thread)', row and row['parent_id'] == top)
+    w = pg.set_viewport_size({'width': 375, 'height': 740}) or pg.evaluate('document.documentElement.scrollWidth')
+    check('reply: thread fits 375px mobile width', w <= 375, f'scrollWidth={w}')
+    pg.set_viewport_size({'width': 1400, 'height': 900})
+    before = int(pg.inner_text(f'#post-{p1} a.act span'))
+    pg.click(f'#c-{top} button:has-text("حذف")'); pg.wait_for_timeout(400)
+    check('reply: deleting parent removes whole thread from view', pg.locator(f'#t-{top}').count() == 0)
+    check('reply: counter drops by comment + its replies', int(pg.inner_text(f'#post-{p1} a.act span')) == before - 4, f"{before}->{pg.inner_text(f'#post-{p1} a.act span')}")
+    pg.goto(URL + '?signed#/notifications'); pg.wait_for_timeout(600)
+    check('reply: notification says "replied to your comment"', 'ردّ على تعليقك' in pg.inner_text('#nl'))
+    check('reply: no JS errors', not pg._errs, '; '.join(pg._errs))
+
     # ---------- PROFILE / SETTINGS ----------
     pg = page(h='#/settings')
     pg.fill('#sName', 'أنس المعدّل'); pg.fill('#sBio', 'نبذة جديدة'); pg.click('.covers button[data-k="ocean"]'); pg.click('#fBtn'); pg.wait_for_timeout(600)

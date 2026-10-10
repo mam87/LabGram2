@@ -257,6 +257,17 @@ textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;li
 .post-editor select{margin-top:4px}
 .edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.thread{padding:2px 0}
+.replies{margin-inline-start:22px;padding-inline-start:14px;border-inline-start:2px solid var(--line)}
+.replies:empty{display:none}
+.cmt.reply{padding:6px 0}
+.cmt.reply .bubble{border-radius:4px 14px 14px 14px;padding:6px 12px}
+.reply-form{margin:4px 0 10px;margin-inline-start:36px;flex-wrap:wrap}
+.reply-form .input{flex:1;min-width:160px;height:40px}
+.cmt-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.linkbtn{color:var(--muted);font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:3px;padding:6px 4px;min-height:32px}
+.linkbtn:hover{color:var(--brand)}
+.linkbtn svg{width:14px;height:14px}
 .pin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--brand);margin:0 18px 8px}
 .pin-tag svg{width:15px;height:15px}
 .act.pinned{color:var(--brand)}
@@ -429,6 +440,16 @@ function fail(e,fallback='حدث خطأ، حاول مرة أخرى'){
   if(isSetupError(e)){ renderSetup(e); return; }
   // P0001 = message raised by our own database rules (rate limits, permissions) — already user-facing Arabic
   toast(e?.code==='P0001' && e.message ? e.message : fallback);
+}
+// Replace a loading area with a clear error state and a retry button (never leave a skeleton spinning)
+function showError(sel, e, msg='تعذّر تحميل المحتوى'){
+  console.error(e);
+  if(isSetupError(e)){ renderSetup(e); return; }
+  const box=typeof sel==='string'?$(sel):sel; if(!box) return;
+  const offline=!navigator.onLine;
+  box.innerHTML=`<div class="empty glass state-error" role="alert"><div class="big">${offline?'📡':'⚠️'}</div>
+    <b>${offline?'لا يوجد اتصال بالإنترنت':msg}</b><p>${offline?'تحقق من الاتصال ثم أعد المحاولة.':'حدث خطأ مؤقت. حاول مرة أخرى.'}</p>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="route()">إعادة المحاولة</button></div>`;
 }
 
 /* ---------- theme ---------- */
@@ -879,41 +900,80 @@ async function renderPost(id,tok){
   shell('feed',`<a class="back" href="javascript:history.back()">${ic('back')} رجوع</a><div id="pv"><div class="skel glass"></div></div>`);
   const [pr,cr]=await Promise.all([
     sb.from('lg_posts').select(POST_SEL).eq('id',id).maybeSingle(),
-    sb.from('lg_comments').select('id,body,created_at,user_id,author:lg_profiles!lg_comments_user_id_fkey(id,username,display_name,avatar_url,role,verified)').eq('post_id',id).order('created_at'),
+    sb.from('lg_comments').select('id,body,created_at,user_id,post_id,parent_id,author:lg_profiles!lg_comments_user_id_fkey(id,username,display_name,avatar_url,role,verified)').eq('post_id',id).order('created_at'),
   ]);
   if(stale(tok)) return;
-  if(pr.error) return fail(pr.error);
+  if(pr.error||cr.error) return showError('#pv', pr.error||cr.error);
   if(!pr.data){ $('#pv').innerHTML=`<div class="empty glass"><div class="big">🔍</div><b>المنشور غير موجود</b><p>ربما تم حذفه.</p></div>`; return }
   const p=norm(pr.data); const post=p;
   $('#pv').innerHTML=postCard(p);
   const card=$('#post-'+p.id);
-  card.insertAdjacentHTML('beforeend',`<div class="comments"><div id="clist">${(cr.data||[]).map(c=>cmtHTML(c,post)).join('') || '<p class="muted" id="noc" style="font-size:14px;padding:6px 0">لا توجد تعليقات بعد — كن أول من يعلّق.</p>'}</div>
+  const all=cr.data||[], top=all.filter(c=>!c.parent_id);
+  card.insertAdjacentHTML('beforeend',`<div class="comments"><div id="clist">${top.map(c=>threadHTML(c,all.filter(r=>r.parent_id===c.id),post)).join('') || '<p class="muted" id="noc" style="font-size:14px;padding:6px 0">لا توجد تعليقات بعد — كن أول من يعلّق.</p>'}</div>
     <form class="cmt-form" onsubmit="addComment(event,'${p.id}')">${avatar(S.me,40)}<input class="input" id="cIn" placeholder="أضف تعليقاً…" maxlength="1000" autocomplete="off"><button class="btn btn-primary" id="cBtn">نشر</button></form></div>`);
 }
+function threadHTML(c,replies,post){
+  return `<div class="thread" id="t-${c.id}">${cmtHTML(c,post)}
+    <div class="replies" id="r-${c.id}">${replies.map(r=>cmtHTML(r,post)).join('')}</div>
+    <form class="cmt-form reply-form hidden" id="rf-${c.id}" onsubmit="addReply(event,'${c.id}','${c.post_id||post.id}')">
+      <label class="sr" for="ri-${c.id}">نص الرد</label>
+      <input class="input" id="ri-${c.id}" maxlength="1000" autocomplete="off">
+      <button class="btn btn-primary btn-sm" id="rb-${c.id}">رد</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeReply('${c.id}')">إلغاء</button>
+    </form></div>`;
+}
 function cmtHTML(c,post){
-  const a=c.author||{}, can=c.user_id===S.me.id||S.me.role==='owner'||post?.user_id===S.me.id;
-  return `<div class="cmt" id="c-${c.id}"><a href="#/u/${encodeURIComponent(a.username||'')}">${avatar(a,34)}</a>
+  const a=c.author||{}, isReply=!!c.parent_id, thread=c.parent_id||c.id, pid=c.post_id||post?.id;
+  const can=c.user_id===S.me.id||S.me.role==='owner'||post?.user_id===S.me.id;
+  return `<div class="cmt ${isReply?'reply':''}" id="c-${c.id}"><a href="#/u/${encodeURIComponent(a.username||'')}">${avatar(a,isReply?28:34)}</a>
     <div style="flex:1;min-width:0"><div class="bubble"><a href="#/u/${encodeURIComponent(a.username||'')}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><p>${esc(c.body)}</p></div>
-    <small>${ago(c.created_at)}${can?` · <span class="link" style="font-weight:500" onclick="delComment('${c.id}','${c.post_id||post.id}')">حذف</span>`:''}</small></div></div>`;
+    <small class="cmt-meta">${ago(c.created_at)}
+      · <button class="linkbtn" data-name="${esc(nameOf(a))}" onclick="openReply('${thread}',this.dataset.name)">${ic('reply')} رد</button>
+      ${can?` · <button class="linkbtn" onclick="delComment('${c.id}','${pid}')">حذف</button>`:''}</small></div></div>`;
+}
+function setCount(postId,delta){
+  const p=S.posts.get(postId); if(!p) return;
+  p.cCount=Math.max(0,p.cCount+delta);
+  const a=document.querySelector(`#post-${postId} a.act span`); if(a) a.textContent=fmt(p.cCount);
 }
 async function addComment(e,postId){
   e.preventDefault();
   const inp=$('#cIn'), body=inp.value.trim(); if(!body) return;
   $('#cBtn').disabled=true;
-  const {data,error}=await sb.from('lg_comments').insert({post_id:postId,user_id:S.me.id,body}).select('id,body,created_at,user_id,post_id').single();
+  const {data,error}=await sb.from('lg_comments').insert({post_id:postId,user_id:S.me.id,body}).select('id,body,created_at,user_id,post_id,parent_id').single();
   $('#cBtn').disabled=false;
   if(error) return fail(error,'تعذّر نشر التعليق');
   data.author=S.me; inp.value='';
   $('#noc')?.remove();
-  $('#clist').insertAdjacentHTML('beforeend',cmtHTML(data,S.posts.get(postId)));
-  const p=S.posts.get(postId); if(p){p.cCount++; const a=document.querySelector(`#post-${postId} a.act span`); if(a) a.textContent=fmt(p.cCount)}
+  $('#clist').insertAdjacentHTML('beforeend',threadHTML(data,[],S.posts.get(postId)));
+  setCount(postId,1);
+}
+function openReply(threadId,name){
+  document.querySelectorAll('.reply-form').forEach(f=>{ if(f.id!=='rf-'+threadId) f.classList.add('hidden') });
+  const f=$('#rf-'+threadId); if(!f) return;
+  f.classList.remove('hidden');
+  const i=$('#ri-'+threadId); i.placeholder='رد على '+name+'…'; i.focus();
+}
+function closeReply(threadId){ const f=$('#rf-'+threadId); if(f){ f.classList.add('hidden'); $('#ri-'+threadId).value='' } }
+async function addReply(e,threadId,postId){
+  e.preventDefault();
+  const inp=$('#ri-'+threadId), body=inp.value.trim(); if(!body) return;
+  const b=$('#rb-'+threadId); b.disabled=true;
+  const {data,error}=await sb.from('lg_comments').insert({post_id:postId,user_id:S.me.id,body,parent_id:threadId}).select('id,body,created_at,user_id,post_id,parent_id').single();
+  b.disabled=false;
+  if(error) return fail(error,'تعذّر إرسال الرد');
+  data.author=S.me;
+  $('#r-'+threadId).insertAdjacentHTML('beforeend',cmtHTML(data,S.posts.get(postId)));
+  closeReply(threadId); setCount(postId,1); toast('تم إرسال الرد');
 }
 async function delComment(id,postId){
-  if(!confirm('حذف التعليق؟')) return;
+  const thread=$('#t-'+id), n=thread?thread.querySelectorAll('.replies .cmt').length:0;
+  if(!confirm(n?`حذف التعليق مع ${n} ${n===1?'رد':'ردود'}؟`:'حذف التعليق؟')) return;
   const {error}=await sb.from('lg_comments').delete().eq('id',id);
   if(error) return fail(error,'تعذّر الحذف');
-  $('#c-'+id)?.remove();
-  const p=S.posts.get(postId); if(p){p.cCount=Math.max(0,p.cCount-1); const a=document.querySelector(`#post-${postId} a.act span`); if(a) a.textContent=fmt(p.cCount)}
+  if(thread) thread.remove(); else $('#c-'+id)?.remove();
+  setCount(postId,-(1+n));
+  toast('تم الحذف');
 }
 
 /* ---------- create ---------- */
@@ -1089,13 +1149,13 @@ async function renderNotifications(tok){
   tok=tok??routeToken;
   shell('notifications',`<div class="page-head"><h2>التنبيهات</h2></div><div class="glass list" id="nl"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`);
   const {data,error}=await sb.from('lg_notifications')
-    .select('id,type,read,created_at,post_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role,verified)')
+    .select('id,type,read,created_at,post_id,comment_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role,verified)')
     .eq('user_id',S.me.id).order('created_at',{ascending:false}).limit(60);
   if(stale(tok)) return;
   if(error) return fail(error);
   const T={like:['أعجب بمنشورك','heart','#ec4899'],comment:['علّق على منشورك','chat','#6d5dfc'],follow:['بدأ بمتابعتك','user','#06b6d4']};
   $('#nl').innerHTML = data.length ? data.map(n=>{
-    const a=n.actor||{}, t=T[n.type]||T.like, href=n.post_id?'#/p/'+n.post_id:'#/u/'+encodeURIComponent(a.username||'');
+    const a=n.actor||{}, t=n.type==='comment'&&n.comment_id?['ردّ على تعليقك','reply','#8b5cf6']:(T[n.type]||T.like), href=n.post_id?'#/p/'+n.post_id:'#/u/'+encodeURIComponent(a.username||'');
     return `<a class="row notif ${n.read?'':'unread'}" href="${href}">
       <span style="position:relative">${avatar(a,48)}<span class="ic" style="background:${t[2]}">${ic(t[1])}</span></span>
       <span class="who"><b>${esc(nameOf(a))}</b>${badge(a)} ${t[0]}<br><small>${ago(n.created_at)}</small></span>
