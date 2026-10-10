@@ -256,3 +256,94 @@ create policy lg_media_delete on storage.objects for delete to authenticated
 -- 7) اجعل حسابك مالكاً (بعد أن تسجّل في الموقع) — غيّر mam87 لاسم مستخدمك
 -- ---------------------------------------------------------------------
 -- update public.lg_profiles set role = 'owner' where username = 'mam87';
+
+-- =====================================================================
+-- 8) لوحة تحكم المالك: التوثيق، الإيقاف، التثبيت، البلاغات
+-- =====================================================================
+alter table public.lg_profiles add column if not exists verified boolean not null default false;
+alter table public.lg_profiles add column if not exists banned boolean not null default false;
+alter table public.lg_posts add column if not exists pinned boolean not null default false;
+
+create table if not exists public.lg_reports (
+  id          uuid primary key default gen_random_uuid(),
+  post_id     uuid not null references public.lg_posts(id) on delete cascade,
+  reporter_id uuid not null,
+  reason      text not null check (char_length(reason) between 1 and 300),
+  status      text not null default 'open' check (status in ('open','resolved')),
+  created_at  timestamptz not null default now(),
+  constraint lg_reports_reporter_id_fkey foreign key (reporter_id) references public.lg_profiles(id) on delete cascade,
+  constraint lg_reports_once unique (post_id, reporter_id)
+);
+create index if not exists lg_reports_status_idx on public.lg_reports (status, created_at desc);
+create index if not exists lg_posts_pinned_idx on public.lg_posts (pinned) where pinned;
+
+create or replace function public.lg_is_banned()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.lg_profiles where id = auth.uid() and banned);
+$$;
+revoke execute on function public.lg_is_banned() from public, anon;
+grant execute on function public.lg_is_banned() to authenticated;
+
+create or replace function public.lg_guard_role()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  if tg_op = 'INSERT' then
+    new.role := 'user'; new.verified := false; new.banned := false; return new;
+  end if;
+  if (new.role is distinct from old.role or new.verified is distinct from old.verified or new.banned is distinct from old.banned)
+     and not public.lg_is_owner() then
+    raise exception 'غير مسموح بتغيير الصلاحيات';
+  end if;
+  return new;
+end $$;
+
+create or replace function public.lg_guard_post()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  if tg_op = 'INSERT' then new.pinned := false; return new; end if;
+  if new.pinned is distinct from old.pinned and not public.lg_is_owner() then
+    raise exception 'التثبيت للمالك فقط';
+  end if;
+  return new;
+end $$;
+drop trigger if exists lg_guard_post on public.lg_posts;
+create trigger lg_guard_post before insert or update on public.lg_posts
+  for each row execute function public.lg_guard_post();
+revoke execute on function public.lg_guard_post() from public, anon, authenticated;
+
+drop policy if exists lg_posts_owner_update   on public.lg_posts;
+drop policy if exists lg_posts_not_banned     on public.lg_posts;
+drop policy if exists lg_comments_not_banned  on public.lg_comments;
+drop policy if exists lg_likes_not_banned     on public.lg_likes;
+drop policy if exists lg_follows_not_banned   on public.lg_follows;
+create policy lg_posts_owner_update on public.lg_posts for update to authenticated
+  using (public.lg_is_owner()) with check (public.lg_is_owner());
+create policy lg_posts_not_banned    on public.lg_posts    as restrictive for insert to authenticated with check (not public.lg_is_banned());
+create policy lg_comments_not_banned on public.lg_comments as restrictive for insert to authenticated with check (not public.lg_is_banned());
+create policy lg_likes_not_banned    on public.lg_likes    as restrictive for insert to authenticated with check (not public.lg_is_banned());
+create policy lg_follows_not_banned  on public.lg_follows  as restrictive for insert to authenticated with check (not public.lg_is_banned());
+
+grant select, insert, update, delete on public.lg_reports to authenticated;
+alter table public.lg_reports enable row level security;
+drop policy if exists lg_reports_insert       on public.lg_reports;
+drop policy if exists lg_reports_not_banned   on public.lg_reports;
+drop policy if exists lg_reports_owner_read   on public.lg_reports;
+drop policy if exists lg_reports_owner_update on public.lg_reports;
+drop policy if exists lg_reports_owner_delete on public.lg_reports;
+create policy lg_reports_insert       on public.lg_reports for insert to authenticated with check (reporter_id = auth.uid());
+create policy lg_reports_not_banned   on public.lg_reports as restrictive for insert to authenticated with check (not public.lg_is_banned());
+create policy lg_reports_owner_read   on public.lg_reports for select to authenticated using (public.lg_is_owner());
+create policy lg_reports_owner_update on public.lg_reports for update to authenticated using (public.lg_is_owner()) with check (public.lg_is_owner());
+create policy lg_reports_owner_delete on public.lg_reports for delete to authenticated using (public.lg_is_owner());
+
+create or replace function public.lg_admin_users()
+returns table (id uuid, email text, last_sign_in_at timestamptz, confirmed boolean)
+language plpgsql stable security definer set search_path = public, auth as $$
+begin
+  if not public.lg_is_owner() then raise exception 'غير مسموح'; end if;
+  return query select u.id, u.email::text, u.last_sign_in_at, (u.email_confirmed_at is not null) from auth.users u;
+end $$;
+revoke execute on function public.lg_admin_users() from public, anon;
+grant execute on function public.lg_admin_users() to authenticated;

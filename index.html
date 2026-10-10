@@ -250,6 +250,44 @@ textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;li
 .covers button.on{border-color:var(--text);transform:scale(1.05)}
 .av-edit{display:flex;align-items:center;gap:16px;margin-bottom:18px}
 
+/* ---------- owner / moderation ---------- */
+.badge.v{background:#0ea5e9}
+.pin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--brand);margin:0 18px 8px}
+.pin-tag svg{width:15px;height:15px}
+.act.pinned{color:var(--brand)}
+.act.pinned svg{fill:var(--brand)}
+.banned-bar{display:flex;align-items:center;gap:10px;padding:14px 18px;margin-bottom:16px;border-color:rgba(239,68,68,.45);color:var(--danger);font-weight:600}
+.modal{position:fixed;inset:0;z-index:90;background:rgba(5,8,20,.55);display:grid;place-items:center;padding:16px;animation:rise .2s}
+.modal-box{width:100%;max-width:420px;padding:22px;background:var(--glass-strong)}
+.modal-box h3{font-family:"Readex Pro",sans-serif;font-size:19px;margin-bottom:4px}
+.reasons{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.reasons .btn{justify-content:flex-start}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.tile2{padding:16px 18px;display:block}
+.tile2 span{color:var(--muted);font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.tile2 span svg{width:17px;height:17px}
+.tile2 b{font-family:"Readex Pro",sans-serif;font-size:30px;display:block;line-height:1.35}
+.tile2 small{color:var(--ok);font-weight:600;font-size:12.5px}
+.tile2.warn b{color:var(--pink)}
+.chart{padding:18px;margin-bottom:18px}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chart-head h3{font-family:"Readex Pro",sans-serif;font-size:16px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:6px;vertical-align:0}
+.bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:6px;align-items:end;height:150px;margin-top:16px;border-bottom:1px solid var(--line)}
+.bar{display:flex;gap:2px;align-items:flex-end;justify-content:center;height:100%}
+.bar i{display:block;width:42%;border-radius:4px 4px 0 0;min-height:2px}
+.bar-lbl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:6px;font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--hover);color:var(--brand);margin-inline-start:6px;vertical-align:1px}
+.pill.red{background:rgba(239,68,68,.12);color:var(--danger)}
+.pill.ok{background:rgba(16,185,129,.12);color:var(--ok)}
+.adm-row{flex-wrap:wrap;border-bottom:1px solid var(--line);border-radius:0}
+.adm-row:last-child{border-bottom:0}
+.adm-act{display:flex;gap:6px;flex-wrap:wrap}
+.thumb{width:58px;height:58px;border-radius:12px;object-fit:cover;flex:none;background:var(--grad);color:#fff;font-size:10.5px;line-height:1.4;display:grid;place-items:center;overflow:hidden;padding:5px;text-align:center}
+.who small.ell{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:860px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.adm-act{width:100%;padding-inline-start:58px}}
+
 .toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,20px);opacity:0;z-index:100;padding:12px 20px;border-radius:16px;background:#141a2e;color:#fff;font-weight:600;font-size:14.5px;box-shadow:var(--shadow-lg);transition:.3s;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .spin{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite}
@@ -335,6 +373,11 @@ const P = {
   check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   back:'<path d="M5 12h14M13 5l7 7-7 7"/>',
   x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  pin:'<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+  ban:'<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M8 17V11M13 17V7M18 17v-4"/>',
   flask:'<path d="M9 3h6M10 3v6L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
 };
 const ic = (n,cls='') => `<svg class="i ${cls}" viewBox="0 0 24 24">${P[n]}</svg>`;
@@ -352,7 +395,9 @@ function avatar(p,s=42){
   if(p?.avatar_url) return `<img class="av" style="--s:${s}px" src="${esc(p.avatar_url)}" alt="" loading="lazy">`;
   return `<span class="av" style="--s:${s}px;background:${avGrad(p?.id||p?.username||'')}">${esc(nameOf(p).charAt(0).toUpperCase())}</span>`;
 }
-const badge = p => p?.role==='owner' ? `<span class="badge" title="مالك المنصة">${ic('check')}</span>` : '';
+const badge = p => p?.role==='owner' ? `<span class="badge" title="مالك المنصة">${ic('check')}</span>`
+  : p?.verified ? `<span class="badge v" title="حساب موثّق">${ic('check')}</span>` : '';
+const isOwner = () => S.me?.role==='owner';
 const rtf = new Intl.RelativeTimeFormat('ar',{numeric:'auto',style:'short'});
 function ago(iso){
   const s=(new Date(iso)-Date.now())/1000, a=Math.abs(s);
@@ -435,7 +480,7 @@ async function route(){
   const views={
     '':()=>renderFeed('all',b), c:()=>renderFeed('all',b), following:()=>renderFeed('following'),
     explore:()=>renderExplore(b), new:renderCreate, notifications:renderNotifications,
-    u:()=>renderProfile(b), p:()=>renderPost(b), settings:renderSettings,
+    u:()=>renderProfile(b), p:()=>renderPost(b), settings:renderSettings, admin:()=>renderAdmin(b),
   };
   (views[a]||views[''])(tok);
 }
@@ -450,6 +495,7 @@ function shell(active, inner, {aside=true}={}){
   <header class="topbar glass"><div class="topbar-in">
     <a href="#/">${LOGO}</a>
     <div style="display:flex;gap:4px">
+      ${isOwner()?`<a class="icon-btn" href="#/admin" aria-label="لوحة التحكم" style="${active==='admin'?'color:var(--brand)':''}">${ic('shield')}</a>`:''}
       <button class="icon-btn" onclick="toggleTheme()" aria-label="الوضع">${ic(theme()==='dark'?'sun':'moon')}</button>
       <a class="icon-btn" href="#/settings" aria-label="الإعدادات">${ic('gear')}</a>
     </div>
@@ -464,6 +510,7 @@ function shell(active, inner, {aside=true}={}){
       ${nav('#/notifications','notifications','bell','التنبيهات',ub)}
       ${nav('#/u/'+encodeURIComponent(me.username),'me','user','حسابي')}
       ${nav('#/settings','settings','gear','الإعدادات')}
+      ${isOwner()?nav('#/admin','admin','shield','لوحة التحكم'):''}
       <a class="btn btn-primary" href="#/new">${ic('plus')} منشور جديد</a>
       <div class="side-me glass">
         <a href="#/u/${encodeURIComponent(me.username)}">${avatar(me,40)}</a>
@@ -473,10 +520,10 @@ function shell(active, inner, {aside=true}={}){
       </div>
     </nav>
 
-    <main id="main">${inner}</main>
+    <main id="main">${me.banned?`<div class="banned-bar glass">${ic('ban')} حسابك موقوف من إدارة المنصة — لا يمكنك النشر أو التعليق حالياً.</div>`:''}${inner}</main>
 
     <aside class="aside">
-      <div class="panel glass" id="sugPanel"><h3>مقترحون للمتابعة</h3><div id="sug"><div class="muted" style="font-size:14px">جارٍ التحميل…</div></div></div>
+      ${aside?`<div class="panel glass" id="sugPanel"><h3>مقترحون للمتابعة</h3><div id="sug"><div class="muted" style="font-size:14px">جارٍ التحميل…</div></div></div>`:''}
       <div class="panel glass"><h3>الأقسام</h3><div class="cat-list">${CATS.map(c=>`<a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>`).join('')}</div></div>
       <div class="foot">LabGram · مجتمع أخصائيي المختبرات والمهنيين الصحيين © ${new Date().getFullYear()}</div>
     </aside>
@@ -495,7 +542,7 @@ const main = () => $('#main');
 
 async function loadSuggestions(){
   const box=$('#sug'); if(!box || getComputedStyle($('.aside')).display==='none') return;
-  const {data,error}=await sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,role').neq('id',S.me.id).order('created_at',{ascending:false}).limit(30);
+  const {data,error}=await sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,role,verified').neq('id',S.me.id).order('created_at',{ascending:false}).limit(30);
   if(error||!$('#sug')) return;
   const list=data.filter(p=>!S.followIds.has(p.id)).slice(0,5);
   $('#sug').innerHTML = list.length ? list.map(p=>`
@@ -664,7 +711,7 @@ function renderSetup(e){
 /* =====================================================================
    POSTS
    ===================================================================== */
-const POST_SEL='id,body,image_url,category,created_at,user_id,author:lg_profiles!lg_posts_user_id_fkey(id,username,display_name,avatar_url,specialty,role),lg_likes(user_id),lg_comments(count)';
+const POST_SEL='id,body,image_url,category,created_at,user_id,pinned,author:lg_profiles!lg_posts_user_id_fkey(id,username,display_name,avatar_url,specialty,role,verified),lg_likes(user_id),lg_comments(count)';
 function norm(p){
   p.likeSet=new Set((p.lg_likes||[]).map(l=>l.user_id));
   p.cCount=p.lg_comments?.[0]?.count||0;
@@ -682,13 +729,17 @@ function postCard(p,i=0){
       <div class="who"><a href="${href}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><small><span dir="ltr">@${esc(a.username)}</span> · ${ago(p.created_at)}</small></div>
       <a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>
     </div>
+    ${p.pinned?`<div class="pin-tag">${ic('pin')} منشور مثبّت</div>`:''}
     ${p.body?`<div class="post-body">${esc(p.body)}</div>`:''}
     ${p.image_url?`<div class="post-img" ondblclick="dblLike('${p.id}',this)"><img src="${esc(p.image_url)}" alt="" loading="lazy"></div>`:''}
     <div class="post-actions">
       <button class="act ${liked?'liked':''}" id="like-${p.id}" onclick="toggleLike('${p.id}')">${ic('heart')}<span>${fmt(p.likeSet.size)}</span></button>
       <a class="act" href="#/p/${p.id}">${ic('chat')}<span>${fmt(p.cCount)}</span></a>
-      <button class="act" onclick="sharePost('${p.id}')">${ic('share')}</button>
-      ${canDelete(p)?`<button class="act end" onclick="deletePost('${p.id}')" title="حذف">${ic('trash')}</button>`:''}
+      <button class="act" onclick="sharePost('${p.id}')" title="مشاركة">${ic('share')}</button>
+      <span style="flex:1"></span>
+      ${isOwner()?`<button class="act ${p.pinned?'pinned':''}" onclick="togglePin('${p.id}')" title="${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الصفحة'}">${ic('pin')}</button>`:''}
+      ${p.user_id!==S.me.id?`<button class="act" onclick="openReport('${p.id}')" title="إبلاغ">${ic('flag')}</button>`:''}
+      ${canDelete(p)?`<button class="act" onclick="deletePost('${p.id}')" title="حذف">${ic('trash')}</button>`:''}
     </div>
   </article>`;
 }
@@ -745,7 +796,7 @@ async function renderFeed(mode,catKey,tok){
     <a class="composer glass" href="#/new">${avatar(S.me,42)}<div class="fake">شارك حالة، صورة مجهرية أو معلومة…</div><span class="icon-btn" style="color:var(--brand)">${ic('image')}</span></a>
     <div id="feed"><div class="skel glass"></div><div class="skel glass"></div></div>
     <div class="more" id="more"></div>`);
-  feedState={mode,catKey,offset:0,done:false,tok};
+  feedState={mode,catKey,offset:0,done:false,tok,showPinned:mode==='all'&&!catKey};
   await loadFeed();
 }
 async function loadFeed(){
@@ -756,12 +807,17 @@ async function loadFeed(){
     const ids=[...S.followIds, S.me.id];
     q=q.in('user_id',ids);
   }
-  const {data,error}=await q;
+  if(st.showPinned) q=q.eq('pinned',false);
+  const first=st.offset===0;
+  const [{data,error},pin]=await Promise.all([
+    q,
+    first&&st.showPinned ? sb.from('lg_posts').select(POST_SEL).eq('pinned',true).order('created_at',{ascending:false}).limit(3) : Promise.resolve({data:[]}),
+  ]);
   if(stale(st.tok)) return;
   if(error) return fail(error,'تعذّر تحميل المنشورات');
-  if(st.offset===0) box.innerHTML='';
+  if(first) box.innerHTML=(pin.data||[]).map(norm).map(postCard).join('');
   const posts=data.map(norm);
-  if(!posts.length && st.offset===0){
+  if(!posts.length && first && !(pin.data||[]).length){
     box.innerHTML = st.mode==='following' && S.followIds.size===0
       ? `<div class="empty glass"><div class="big">👥</div><b>لا تتابع أحداً بعد</b><p>اكتشف زملاءك وابدأ بمتابعتهم.</p><a class="btn btn-primary" style="margin-top:14px" href="#/explore">استكشاف</a></div>`
       : `<div class="empty glass"><div class="big">🧪</div><b>لا توجد منشورات بعد</b><p>كن أول من يشارك في هذا القسم.</p><a class="btn btn-primary" style="margin-top:14px" href="#/new">انشر الآن</a></div>`;
@@ -776,7 +832,7 @@ async function renderPost(id,tok){
   shell('feed',`<a class="back" href="javascript:history.back()">${ic('back')} رجوع</a><div id="pv"><div class="skel glass"></div></div>`);
   const [pr,cr]=await Promise.all([
     sb.from('lg_posts').select(POST_SEL).eq('id',id).maybeSingle(),
-    sb.from('lg_comments').select('id,body,created_at,user_id,author:lg_profiles!lg_comments_user_id_fkey(id,username,display_name,avatar_url,role)').eq('post_id',id).order('created_at'),
+    sb.from('lg_comments').select('id,body,created_at,user_id,author:lg_profiles!lg_comments_user_id_fkey(id,username,display_name,avatar_url,role,verified)').eq('post_id',id).order('created_at'),
   ]);
   if(stale(tok)) return;
   if(pr.error) return fail(pr.error);
@@ -960,7 +1016,7 @@ async function renderExplore(q0='',tok){
 }
 async function searchPeople(q){
   q=(q||'').trim().replace(/[,()%*\\]/g,'');
-  let r=sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,bio,role').neq('id',S.me.id).limit(20);
+  let r=sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,bio,role,verified').neq('id',S.me.id).limit(20);
   if(q){
     const specs=CATS.filter(c=>c.ar.includes(q)).map(c=>c.k);
     let ors=`username.ilike.%${q}%,display_name.ilike.%${q}%,specialty.ilike.%${q}%`;
@@ -985,7 +1041,7 @@ async function renderNotifications(tok){
   tok=tok??routeToken;
   shell('notifications',`<div class="page-head"><h2>التنبيهات</h2></div><div class="glass list" id="nl"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`);
   const {data,error}=await sb.from('lg_notifications')
-    .select('id,type,read,created_at,post_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role)')
+    .select('id,type,read,created_at,post_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role,verified)')
     .eq('user_id',S.me.id).order('created_at',{ascending:false}).limit(60);
   if(stale(tok)) return;
   if(error) return fail(error);
@@ -1059,6 +1115,207 @@ async function saveSettings(){
     busy(false);
     setMsg(e.code==='23505'?'اسم المستخدم محجوز':'تعذّر الحفظ: '+(e.message||''));
   }
+}
+
+/* =====================================================================
+   REPORTS & PIN
+   ===================================================================== */
+const REASONS=['محتوى غير لائق','يحتوي بيانات تعريفية لمريض','إزعاج أو إعلان (سبام)','معلومة علمية خاطئة','سبب آخر'];
+function openReport(id){
+  const m=document.createElement('div'); m.className='modal';
+  m.innerHTML=`<div class="modal-box glass" role="dialog" aria-label="الإبلاغ عن المنشور">
+    <h3>الإبلاغ عن المنشور</h3><p class="muted" style="font-size:14px">اختر السبب، وستراجعه إدارة المنصة.</p>
+    <div class="reasons">${REASONS.map(r=>`<button class="btn btn-ghost btn-block" data-r="${esc(r)}">${ic('flag')} ${esc(r)}</button>`).join('')}</div>
+    <button class="btn btn-block" style="margin-top:10px" data-x="1">إلغاء</button></div>`;
+  m.addEventListener('click',e=>{
+    const r=e.target.closest('[data-r]');
+    if(r){ m.remove(); sendReport(id,r.dataset.r); return }
+    if(e.target===m || e.target.closest('[data-x]')) m.remove();
+  });
+  document.body.appendChild(m);
+}
+async function sendReport(id,reason){
+  const {error}=await sb.from('lg_reports').insert({post_id:id,reporter_id:S.me.id,reason});
+  if(error){ if(error.code==='23505') return toast('سبق أن أبلغت عن هذا المنشور'); return fail(error,'تعذّر إرسال البلاغ') }
+  toast('شكراً لك، تم إرسال البلاغ');
+}
+async function togglePin(id){
+  const p=S.posts.get(id); if(!p||!isOwner()) return;
+  const {error}=await sb.from('lg_posts').update({pinned:!p.pinned}).eq('id',id);
+  if(error) return fail(error,'تعذّر التثبيت');
+  p.pinned=!p.pinned; toast(p.pinned?'تم تثبيت المنشور أعلى الرئيسية 📌':'تم إلغاء التثبيت');
+  if(parseHash().a==='admin') renderAdmin('posts'); else route();
+}
+
+/* =====================================================================
+   OWNER DASHBOARD
+   ===================================================================== */
+const ADM={users:[],emails:{},q:'',showResolved:false};
+const dateAr = iso => new Date(iso).toLocaleDateString('ar',{day:'numeric',month:'short',year:'numeric'});
+async function renderAdmin(tab){
+  if(!isOwner()){ location.hash='#/'; return }
+  tab=['overview','users','reports','posts'].includes(tab)?tab:'overview';
+  const T=[['overview','نظرة عامة'],['users','المستخدمون'],['reports','البلاغات'],['posts','المنشورات']];
+  shell('admin',`
+    <div class="page-head"><h2>لوحة التحكم</h2><span class="chip">${ic('shield')} مالك المنصة</span></div>
+    <div class="chips">${T.map(([k,l])=>`<a href="#/admin/${k}" class="${tab===k?'on':''}">${l}${k==='reports'?' <span id="repCount"></span>':''}</a>`).join('')}</div>
+    <div id="adm"><div class="skel glass" style="height:220px"></div></div>`,{aside:false});
+  ({overview:admOverview,users:admUsers,reports:admReports,posts:admPosts})[tab]();
+  const {count}=await sb.from('lg_reports').select('id',{count:'exact',head:true}).eq('status','open');
+  const rc=$('#repCount'); if(rc&&count) rc.textContent='('+fmt(count)+')';
+}
+const cnt=(t,f)=>{let q=sb.from(t).select('*',{count:'exact',head:true}); return f?f(q):q};
+
+async function admOverview(){
+  const start=new Date(); start.setHours(0,0,0,0);
+  const today=start.toISOString(), week=new Date(Date.now()-7*864e5).toISOString();
+  const since=new Date(start.getTime()-13*864e5);
+  const [u,u7,p,pT,cm,lk,fo,rp,ps,us,latest]=await Promise.all([
+    cnt('lg_profiles'), cnt('lg_profiles',q=>q.gte('created_at',week)),
+    cnt('lg_posts'), cnt('lg_posts',q=>q.gte('created_at',today)),
+    cnt('lg_comments'), cnt('lg_likes'), cnt('lg_follows'),
+    cnt('lg_reports',q=>q.eq('status','open')),
+    sb.from('lg_posts').select('created_at').gte('created_at',since.toISOString()),
+    sb.from('lg_profiles').select('created_at').gte('created_at',since.toISOString()),
+    sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,role,verified,created_at').order('created_at',{ascending:false}).limit(5),
+  ]);
+  if(!$('#adm')) return;
+  if(u.error) return fail(u.error);
+  const days=[...Array(14)].map((_,i)=>{const d=new Date(since.getTime()+i*864e5);return {k:d.toDateString(),d:d.getDate(),p:0,u:0}});
+  const idx=Object.fromEntries(days.map((d,i)=>[d.k,i]));
+  (ps.data||[]).forEach(r=>{const i=idx[new Date(r.created_at).toDateString()]; if(i!=null) days[i].p++});
+  (us.data||[]).forEach(r=>{const i=idx[new Date(r.created_at).toDateString()]; if(i!=null) days[i].u++});
+  const max=Math.max(1,...days.map(d=>Math.max(d.p,d.u)));
+  const tile=(icon,label,n,sub,cls='',href='')=>`<${href?'a href="'+href+'"':'div'} class="tile2 glass ${cls}"><span>${ic(icon)} ${label}</span><b>${fmt(n)}</b>${sub?`<small>${sub}</small>`:''}</${href?'a':'div'}>`;
+  $('#adm').innerHTML=`
+    <div class="tiles">
+      ${tile('users','المستخدمون',u.count,u7.count?'+'+fmt(u7.count)+' هذا الأسبوع':'')}
+      ${tile('image','المنشورات',p.count,pT.count?'+'+fmt(pT.count)+' اليوم':'')}
+      ${tile('chat','التعليقات',cm.count)}
+      ${tile('heart','الإعجابات',lk.count)}
+      ${tile('user','المتابعات',fo.count)}
+      ${tile('flag','بلاغات مفتوحة',rp.count,rp.count?'بحاجة لمراجعة':'',rp.count?'warn':'','#/admin/reports')}
+    </div>
+    <section class="chart glass">
+      <div class="chart-head"><h3>النشاط في آخر 14 يوماً</h3>
+        <div class="legend"><span><i style="background:var(--brand)"></i>منشورات</span><span><i style="background:var(--brand2)"></i>مستخدمون جدد</span></div></div>
+      <div class="bars" role="img" aria-label="رسم بياني للمنشورات والمستخدمين الجدد يومياً">
+        ${days.map(d=>`<div class="bar" title="${d.p} منشور · ${d.u} مستخدم"><i style="height:${d.p/max*100}%;background:var(--brand)"></i><i style="height:${d.u/max*100}%;background:var(--brand2)"></i></div>`).join('')}
+      </div>
+      <div class="bar-lbl">${days.map(d=>`<span>${d.d}</span>`).join('')}</div>
+    </section>
+    <section class="glass list"><div class="panel" style="padding:10px 10px 4px"><h3>أحدث المنضمين</h3></div>
+      ${(latest.data||[]).map(x=>`<a class="row" href="#/u/${encodeURIComponent(x.username)}">${avatar(x,42)}<span class="who"><b>${esc(nameOf(x))}</b>${badge(x)}<br><small><span dir="ltr">@${esc(x.username)}</span> · ${dateAr(x.created_at)}</small></span></a>`).join('')||'<p class="muted" style="padding:12px">لا يوجد بعد.</p>'}
+    </section>`;
+}
+
+async function admUsers(){
+  $('#adm').innerHTML=`<div class="search">${ic('search')}<input class="input glass" id="uq" placeholder="ابحث بالاسم أو اسم المستخدم أو البريد…" value="${esc(ADM.q)}" autocomplete="off"></div>
+    <div class="glass list" id="ul"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`;
+  $('#uq').addEventListener('input',e=>{ADM.q=e.target.value;drawUsers()});
+  const [pr,em]=await Promise.all([
+    sb.from('lg_profiles').select('*').order('created_at',{ascending:false}).limit(1000),
+    sb.rpc('lg_admin_users'),
+  ]);
+  if(pr.error) return fail(pr.error);
+  ADM.users=pr.data; ADM.emails=Object.fromEntries((em.data||[]).map(r=>[r.id,r]));
+  drawUsers();
+}
+function drawUsers(){
+  const box=$('#ul'); if(!box) return;
+  const q=ADM.q.trim().toLowerCase();
+  const list=ADM.users.filter(p=>!q||[p.username,p.display_name,ADM.emails[p.id]?.email,p.specialty].some(v=>(v||'').toLowerCase().includes(q)));
+  box.innerHTML = `<div class="muted" style="padding:8px 16px;font-size:13px">${fmt(list.length)} مستخدم</div>` + (list.map(p=>{
+    const e=ADM.emails[p.id], self=p.id===S.me.id;
+    return `<div class="row adm-row">
+      <a href="#/u/${encodeURIComponent(p.username)}">${avatar(p,46)}</a>
+      <div class="who" style="min-width:0">
+        <b>${esc(nameOf(p))}</b>${badge(p)}${p.role==='owner'?'<span class="pill">مالك</span>':''}${p.banned?'<span class="pill red">موقوف</span>':''}${e&&!e.confirmed?'<span class="pill red">بريد غير مفعّل</span>':''}
+        <small class="ell"><span dir="ltr">@${esc(p.username)}</span> · ${cat(p.specialty).ar} · انضم ${dateAr(p.created_at)}</small>
+        ${e?`<small class="ell" dir="ltr" style="text-align:right">${esc(e.email)}${e.last_sign_in_at?' · آخر دخول '+ago(e.last_sign_in_at):''}</small>`:''}
+      </div>
+      <div class="adm-act">
+        <button class="btn btn-ghost btn-sm" onclick="admSet('${p.id}',{verified:${!p.verified}},'${p.verified?'تم إلغاء التوثيق':'تم توثيق الحساب ✓'}')">${ic('check')} ${p.verified?'إلغاء التوثيق':'توثيق'}</button>
+        ${self?'':`<button class="btn ${p.banned?'btn-ghost':'btn-danger'} btn-sm" onclick="admBan('${p.id}',${!p.banned})">${ic('ban')} ${p.banned?'رفع الإيقاف':'إيقاف'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="admOwner('${p.id}',${p.role!=='owner'})">${ic('shield')} ${p.role==='owner'?'إزالة المالك':'جعله مالكاً'}</button>`}
+      </div>
+    </div>`}).join('') || '<div class="empty" style="padding:30px"><b>لا نتائج</b></div>');
+}
+async function admSet(id,patch,msg){
+  const {error}=await sb.from('lg_profiles').update(patch).eq('id',id);
+  if(error) return fail(error,'تعذّر التحديث');
+  const u=ADM.users.find(x=>x.id===id); if(u) Object.assign(u,patch);
+  drawUsers(); toast(msg);
+}
+function admBan(id,on){
+  const u=ADM.users.find(x=>x.id===id);
+  if(on && !confirm(`إيقاف ${nameOf(u)}؟ لن يستطيع النشر أو التعليق أو الإعجاب.`)) return;
+  admSet(id,{banned:on},on?'تم إيقاف الحساب':'تم رفع الإيقاف');
+}
+function admOwner(id,on){
+  const u=ADM.users.find(x=>x.id===id);
+  if(!confirm(on?`منح ${nameOf(u)} صلاحيات المالك الكاملة (حذف المحتوى وإدارة المستخدمين)؟`:`إزالة صلاحيات المالك من ${nameOf(u)}؟`)) return;
+  admSet(id,{role:on?'owner':'user'},on?'أصبح مالكاً':'تمت إزالة صلاحية المالك');
+}
+
+async function admReports(){
+  const {data,error}=await sb.from('lg_reports')
+    .select('id,reason,status,created_at,post_id,reporter:lg_profiles!lg_reports_reporter_id_fkey(id,username,display_name,avatar_url,role,verified),post:lg_posts(id,body,image_url,user_id,author:lg_profiles!lg_posts_user_id_fkey(username,display_name))')
+    .order('created_at',{ascending:false}).limit(200);
+  if(!$('#adm')) return;
+  if(error) return fail(error);
+  const list=data.filter(r=>ADM.showResolved||r.status==='open');
+  $('#adm').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px">
+      <span class="muted" style="font-size:14px">${fmt(data.filter(r=>r.status==='open').length)} بلاغ مفتوح</span>
+      <button class="btn btn-ghost btn-sm" onclick="ADM.showResolved=!ADM.showResolved;admReports()">${ADM.showResolved?'إخفاء المعالجة':'عرض المعالجة أيضاً'}</button>
+    </div>
+    <div class="glass list">${list.map(r=>{
+      const p=r.post||{}, a=p.author||{};
+      return `<div class="row adm-row" id="rep-${r.id}">
+        <a href="#/p/${r.post_id}">${p.image_url?`<img class="thumb" src="${esc(p.image_url)}" alt="">`:`<span class="thumb">${esc((p.body||'').slice(0,40))}</span>`}</a>
+        <div class="who" style="min-width:0">
+          <b>${esc(r.reason)}</b>${r.status==='resolved'?'<span class="pill ok">تمت المعالجة</span>':''}
+          <small class="ell">منشور ${esc(nameOf(a))} · أبلغ عنه ${esc(nameOf(r.reporter))} · ${ago(r.created_at)}</small>
+          ${p.body?`<small class="ell">${esc(p.body.slice(0,120))}</small>`:''}
+        </div>
+        <div class="adm-act">
+          <a class="btn btn-ghost btn-sm" href="#/p/${r.post_id}">عرض</a>
+          ${r.status==='open'?`<button class="btn btn-ghost btn-sm" onclick="admResolve('${r.id}')">${ic('check')} تجاهل</button>`:''}
+          <button class="btn btn-danger btn-sm" onclick="admDeleteReported('${r.post_id}')">${ic('trash')} حذف المنشور</button>
+        </div>
+      </div>`}).join('') || `<div class="empty"><div class="big">✅</div><b>لا توجد بلاغات مفتوحة</b><p>كل شيء نظيف.</p></div>`}</div>`;
+}
+async function admResolve(id){
+  const {error}=await sb.from('lg_reports').update({status:'resolved'}).eq('id',id);
+  if(error) return fail(error,'تعذّر التحديث');
+  toast('تم تجاهل البلاغ'); admReports();
+}
+async function admDeleteReported(postId){
+  if(!confirm('حذف هذا المنشور نهائياً؟ ستُغلق كل البلاغات المرتبطة به.')) return;
+  const {error}=await sb.from('lg_posts').delete().eq('id',postId);
+  if(error) return fail(error,'تعذّر الحذف');
+  toast('تم حذف المنشور'); renderAdmin('reports');
+}
+
+async function admPosts(){
+  const {data,error}=await sb.from('lg_posts').select(POST_SEL).order('pinned',{ascending:false}).order('created_at',{ascending:false}).limit(60);
+  if(!$('#adm')) return;
+  if(error) return fail(error);
+  const list=data.map(norm);
+  $('#adm').innerHTML=`<div class="glass list">${list.map(p=>`
+    <div class="row adm-row" id="post-${p.id}">
+      <a href="#/p/${p.id}">${p.image_url?`<img class="thumb" src="${esc(p.image_url)}" alt="">`:`<span class="thumb">${esc(p.body.slice(0,40))}</span>`}</a>
+      <div class="who" style="min-width:0">
+        <b>${esc(nameOf(p.author))}</b>${badge(p.author)}${p.pinned?'<span class="pill">مثبّت</span>':''}
+        <small class="ell">${cat(p.category).ar} · ${ago(p.created_at)} · ${fmt(p.likeSet.size)} إعجاب · ${fmt(p.cCount)} تعليق</small>
+        ${p.body?`<small class="ell">${esc(p.body.slice(0,120))}</small>`:''}
+      </div>
+      <div class="adm-act">
+        <button class="btn btn-ghost btn-sm" onclick="togglePin('${p.id}')">${ic('pin')} ${p.pinned?'إلغاء التثبيت':'تثبيت'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePost('${p.id}')">${ic('trash')} حذف</button>
+      </div>
+    </div>`).join('') || '<div class="empty"><b>لا توجد منشورات بعد</b></div>'}</div>`;
 }
 
 /* =====================================================================
