@@ -409,6 +409,8 @@ function ago(iso){
 }
 const fmt = n => new Intl.NumberFormat('ar').format(n||0);
 const USER_RE = /^[A-Za-z0-9_.]{3,30}$/;
+const PASS_MSG = 'كلمة المرور 8 أحرف على الأقل وتحتوي حروفاً وأرقاماً';
+const passOk = p => p.length>=8 && /[A-Za-z]/.test(p) && /[0-9]/.test(p);
 
 function isSetupError(e){
   const m=(e?.message||'')+' '+(e?.code||'');
@@ -595,7 +597,7 @@ function renderAuth(mode='login'){
           <div class="field"><label>الاسم الكامل</label><input class="input" id="fName" placeholder="اسمك كما سيظهر للآخرين" maxlength="60"></div>
           <div class="field"><label>التخصص</label><select class="input" id="fSpec">${CATS.map(c=>`<option value="${c.k}">${c.e} ${c.ar}</option>`).join('')}</select></div>`:''}
         <div class="field"><label>البريد الإلكتروني</label><input class="input" id="fEmail" type="email" dir="ltr" placeholder="you@example.com" autocomplete="email"></div>
-        ${mode!=='forgot'?`<div class="field"><label>كلمة المرور</label><input class="input" id="fPass" type="password" dir="ltr" placeholder="${mode==='register'?'6 أحرف على الأقل':'••••••••'}" autocomplete="${mode==='register'?'new-password':'current-password'}"></div>`:''}
+        ${mode!=='forgot'?`<div class="field"><label>كلمة المرور</label><input class="input" id="fPass" type="password" dir="ltr" placeholder="${mode==='register'?'8 أحرف على الأقل، حروف وأرقام':'••••••••'}" autocomplete="${mode==='register'?'new-password':'current-password'}"></div>`:''}
         <div class="msg" id="fMsg"></div>
         <button class="btn btn-primary btn-block" id="fBtn" onclick="${mode==='login'?'doLogin()':mode==='register'?'doRegister()':'doForgot()'}">${mode==='login'?'دخول':mode==='register'?'إنشاء الحساب':'إرسال الرابط'}</button>
       </form>
@@ -613,7 +615,7 @@ function authErr(e){
   if(/not confirmed/i.test(m)) return 'لم يتم تفعيل البريد بعد — افتح رسالة التفعيل في بريدك';
   if(/already registered|already been registered/i.test(m)) return 'هذا البريد مسجّل مسبقاً، جرّب تسجيل الدخول';
   if(/rate limit|security purposes/i.test(m)) return 'محاولات كثيرة، انتظر قليلاً ثم حاول مجدداً';
-  if(/Password should/i.test(m)) return 'كلمة المرور ضعيفة — 6 أحرف على الأقل';
+  if(/Password should|weak/i.test(m)) return PASS_MSG;
   return 'خطأ: '+m;
 }
 async function doLogin(){
@@ -630,7 +632,7 @@ async function doRegister(){
   if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
   if(!display) return setMsg('أدخل اسمك الكامل');
   if(!email) return setMsg('أدخل البريد الإلكتروني');
-  if(pass.length<6) return setMsg('كلمة المرور 6 أحرف على الأقل');
+  if(!passOk(pass)) return setMsg(PASS_MSG);
   busy(true);
   const chk=await sb.rpc('lg_username_available',{u:username});
   if(chk.error && isSetupError(chk.error)){busy(false);return renderSetup(chk.error)}
@@ -665,7 +667,7 @@ function renderRecovery(){
   </section></div>`;
 }
 async function doNewPass(){
-  const p=$('#fPass').value; if(p.length<6) return setMsg('6 أحرف على الأقل');
+  const p=$('#fPass').value; if(!passOk(p)) return setMsg(PASS_MSG);
   busy(true); const {error}=await sb.auth.updateUser({password:p}); busy(false);
   if(error) return setMsg(authErr(error));
   S.recovery=false; toast('تم تحديث كلمة المرور ✅'); location.hash='#/'; route();
@@ -1082,7 +1084,7 @@ function renderSettings(){
       <div class="msg" id="fMsg"></div>
       <button class="btn btn-primary btn-block" id="fBtn" onclick="saveSettings()">حفظ التغييرات</button>
       <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px">
-        <div class="field"><label>تغيير كلمة المرور</label><input class="input" id="sPass" type="password" dir="ltr" placeholder="كلمة المرور الجديدة (6 أحرف على الأقل)" autocomplete="new-password"></div>
+        <div class="field"><label>تغيير كلمة المرور</label><input class="input" id="sPass" type="password" dir="ltr" placeholder="8 أحرف على الأقل، حروف وأرقام" autocomplete="new-password"></div>
         <div class="msg" id="pMsg"></div>
         <button class="btn btn-ghost btn-block" id="pBtn" onclick="changePass()">تحديث كلمة المرور</button>
       </div>
@@ -1095,7 +1097,7 @@ function renderSettings(){
 }
 async function changePass(){
   const p=$('#sPass').value, m=$('#pMsg'), b=$('#pBtn');
-  if(p.length<6){m.className='msg err';m.textContent='6 أحرف على الأقل';return}
+  if(!passOk(p)){m.className='msg err';m.textContent=PASS_MSG;return}
   b.disabled=true;
   const {error}=await sb.auth.updateUser({password:p});
   b.disabled=false;
