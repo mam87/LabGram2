@@ -170,7 +170,9 @@ grant usage on schema public to anon, authenticated;
 grant select on public.lg_profiles, public.lg_posts, public.lg_likes, public.lg_comments, public.lg_follows to anon, authenticated;
 grant insert, update, delete on public.lg_profiles, public.lg_posts, public.lg_likes, public.lg_comments, public.lg_follows to authenticated;
 grant select, update, delete on public.lg_notifications to authenticated;
-grant execute on function public.lg_is_owner() to anon, authenticated;
+revoke execute on function public.lg_guard_role(), public.lg_handle_new_user(), public.lg_notify() from public, anon, authenticated;
+revoke execute on function public.lg_is_owner() from public, anon;
+grant execute on function public.lg_is_owner() to authenticated;
 
 alter table public.lg_profiles      enable row level security;
 alter table public.lg_posts         enable row level security;
