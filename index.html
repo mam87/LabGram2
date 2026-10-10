@@ -252,6 +252,11 @@ textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;li
 
 /* ---------- owner / moderation ---------- */
 .badge.v{background:#0ea5e9}
+.post-editor{padding:0 18px 14px}
+.post-editor textarea{min-height:120px}
+.post-editor select{margin-top:4px}
+.edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .pin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--brand);margin:0 18px 8px}
 .pin-tag svg{width:15px;height:15px}
 .act.pinned{color:var(--brand)}
@@ -378,6 +383,9 @@ const P = {
   pin:'<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
   ban:'<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
   chart:'<path d="M3 3v18h18"/><path d="M8 17V11M13 17V7M18 17v-4"/>',
+  pencil:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',
+  reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
   flask:'<path d="M9 3h6M10 3v6L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
 };
 const ic = (n,cls='') => `<svg class="i ${cls}" viewBox="0 0 24 24">${P[n]}</svg>`;
@@ -714,7 +722,7 @@ function renderSetup(e){
 /* =====================================================================
    POSTS
    ===================================================================== */
-const POST_SEL='id,body,image_url,category,created_at,user_id,pinned,author:lg_profiles!lg_posts_user_id_fkey(id,username,display_name,avatar_url,specialty,role,verified),lg_likes(user_id),lg_comments(count)';
+const POST_SEL='id,body,image_url,category,created_at,edited_at,user_id,pinned,author:lg_profiles!lg_posts_user_id_fkey(id,username,display_name,avatar_url,specialty,role,verified),lg_likes(user_id),lg_comments(count)';
 function norm(p){
   p.likeSet=new Set((p.lg_likes||[]).map(l=>l.user_id));
   p.cCount=p.lg_comments?.[0]?.count||0;
@@ -729,11 +737,12 @@ function postCard(p,i=0){
   <article class="post glass" id="post-${p.id}" style="animation-delay:${Math.min(i,6)*50}ms">
     <div class="post-head">
       <a href="${href}">${avatar(a,44)}</a>
-      <div class="who"><a href="${href}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><small><span dir="ltr">@${esc(a.username)}</span> · ${ago(p.created_at)}</small></div>
+      <div class="who"><a href="${href}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><small><span dir="ltr">@${esc(a.username)}</span> · ${ago(p.created_at)}${p.edited_at?` · <span title="${esc(new Date(p.edited_at).toLocaleString('ar'))}">عُدِّل</span>`:''}</small></div>
       <a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>
     </div>
     ${p.pinned?`<div class="pin-tag">${ic('pin')} منشور مثبّت</div>`:''}
     ${p.body?`<div class="post-body">${esc(p.body)}</div>`:''}
+    <div class="post-editor hidden"></div>
     ${p.image_url?`<div class="post-img" ondblclick="dblLike('${p.id}',this)"><img src="${esc(p.image_url)}" alt="" loading="lazy"></div>`:''}
     <div class="post-actions">
       <button class="act ${liked?'liked':''}" id="like-${p.id}" onclick="toggleLike('${p.id}')">${ic('heart')}<span>${fmt(p.likeSet.size)}</span></button>
@@ -742,9 +751,44 @@ function postCard(p,i=0){
       <span style="flex:1"></span>
       ${isOwner()?`<button class="act ${p.pinned?'pinned':''}" onclick="togglePin('${p.id}')" title="${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الصفحة'}">${ic('pin')}</button>`:''}
       ${p.user_id!==S.me.id?`<button class="act" onclick="openReport('${p.id}')" title="إبلاغ">${ic('flag')}</button>`:''}
+      ${p.user_id===S.me.id?`<button class="act" onclick="startEdit('${p.id}')" title="تعديل">${ic('pencil')}</button>`:''}
       ${canDelete(p)?`<button class="act" onclick="deletePost('${p.id}')" title="حذف">${ic('trash')}</button>`:''}
     </div>
   </article>`;
+}
+
+/* ---------- edit post (author only; enforced by the database) ---------- */
+function startEdit(id){
+  const p=S.posts.get(id), card=document.getElementById('post-'+id); if(!p||!card) return;
+  const ed=card.querySelector('.post-editor');
+  card.querySelector('.post-body')?.classList.add('hidden');
+  card.querySelector('.post-actions').classList.add('hidden');
+  ed.classList.remove('hidden');
+  ed.innerHTML=`<label class="sr" for="edit-${id}">نص المنشور</label>
+    <textarea class="input" id="edit-${id}" maxlength="2000" oninput="this.nextElementSibling.textContent=this.value.length+' / 2000'">${esc(p.body)}</textarea>
+    <div class="counter">${p.body.length} / 2000</div>
+    <label class="sr" for="editcat-${id}">القسم</label>
+    <select class="input" id="editcat-${id}">${CATS.map(c=>`<option value="${c.k}" ${c.k===p.category?'selected':''}>${c.e} ${c.ar}</option>`).join('')}</select>
+    <div class="edit-actions"><button class="btn btn-ghost btn-sm" onclick="cancelEdit('${id}')">إلغاء</button><button class="btn btn-primary btn-sm" id="editsave-${id}" onclick="saveEdit('${id}')">حفظ التعديل</button></div>`;
+  const ta=ed.querySelector('textarea'); ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
+}
+function cancelEdit(id){
+  const card=document.getElementById('post-'+id); if(!card) return;
+  const ed=card.querySelector('.post-editor'); ed.classList.add('hidden'); ed.innerHTML='';
+  card.querySelector('.post-body')?.classList.remove('hidden');
+  card.querySelector('.post-actions').classList.remove('hidden');
+}
+async function saveEdit(id){
+  const p=S.posts.get(id); if(!p) return;
+  const body=$('#edit-'+id).value.trim(), category=$('#editcat-'+id).value;
+  if(!body && !p.image_url) return toast('لا يمكن ترك المنشور فارغاً');
+  if(body===p.body && category===p.category) return cancelEdit(id);
+  const b=$('#editsave-'+id); b.disabled=true; b.innerHTML='<span class="spin"></span>';
+  const {data,error}=await sb.from('lg_posts').update({body,category}).eq('id',id).select(POST_SEL).maybeSingle();
+  if(error || !data){ b.disabled=false; b.textContent='حفظ التعديل'; return fail(error||{message:'not allowed'},'تعذّر حفظ التعديل') }
+  const card=document.getElementById('post-'+id), comments=card?.querySelector('.comments');
+  if(card){ card.outerHTML=postCard(norm(data)); if(comments) document.getElementById('post-'+id).appendChild(comments) }
+  toast('تم حفظ التعديل ✓');
 }
 
 async function toggleLike(id){

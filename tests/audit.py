@@ -86,6 +86,28 @@ with sync_playwright() as p:
     check('report: reason submitted', pg.evaluate(f"__DB.lg_reports.some(r=>r.post_id=='{other}' && r.reporter_id==__DB.lg_profiles[0].id)"))
     check('posts: no JS errors', not pg._errs, '; '.join(pg._errs))
 
+    # ---------- EDIT POST ----------
+    pg = page()
+    mine = pg.evaluate("__DB.lg_posts.find(p=>p.user_id==__DB.lg_profiles[0].id && p.body).id")
+    theirs = pg.evaluate("__DB.lg_posts.find(p=>p.user_id!=__DB.lg_profiles[0].id).id")
+    check('edit: button shown on own post', pg.locator(f'#post-{mine} button[title="تعديل"]').count() == 1)
+    check('edit: button hidden on others posts', pg.locator(f'#post-{theirs} button[title="تعديل"]').count() == 0)
+    pg.click(f'#post-{mine} button[title="تعديل"]'); pg.wait_for_timeout(150)
+    check('edit: inline editor opens with current text', pg.input_value(f'#edit-{mine}') == pg.evaluate(f"__DB.lg_posts.find(p=>p.id=='{mine}').body"))
+    pg.click(f'#post-{mine} button:has-text("إلغاء")'); pg.wait_for_timeout(100)
+    check('edit: cancel restores the card', pg.locator(f'#post-{mine} .post-editor.hidden').count() == 1 and pg.locator(f'#post-{mine} .post-actions:not(.hidden)').count() == 1)
+    pg.click(f'#post-{mine} button[title="تعديل"]'); pg.fill(f'#edit-{mine}', ''); pg.click(f'#editsave-{mine}'); pg.wait_for_timeout(200)
+    check('edit: empty text-only post rejected', 'فارغ' in pg.evaluate("document.getElementById('toast').textContent"))
+    pg.fill(f'#edit-{mine}', 'نص معدّل للاختبار'); pg.select_option(f'#editcat-{mine}', 'Hematology'); pg.click(f'#editsave-{mine}'); pg.wait_for_timeout(400)
+    row = pg.evaluate(f"__DB.lg_posts.find(p=>p.id=='{mine}')")
+    check('edit: saved to database (text + category)', row['body'] == 'نص معدّل للاختبار' and row['category'] == 'Hematology')
+    check('edit: card shows new text and "edited" label', 'نص معدّل للاختبار' in pg.inner_text(f'#post-{mine}') and 'عُدِّل' in pg.inner_text(f'#post-{mine}'))
+    pg.goto(URL + f'?signed#/p/{mine}'); pg.wait_for_timeout(600)
+    c0 = pg.locator('.cmt').count(); pg.fill('#cIn', 'تعليق قبل التعديل'); pg.click('#cBtn'); pg.wait_for_timeout(300)
+    pg.click(f'#post-{mine} button[title="تعديل"]'); pg.fill(f'#edit-{mine}', 'تعديل ثانٍ'); pg.click(f'#editsave-{mine}'); pg.wait_for_timeout(400)
+    check('edit: comments stay visible after editing on post page', pg.locator('.cmt').count() == c0 + 1 and pg.locator('#cIn').count() == 1)
+    check('edit: no JS errors', not pg._errs, '; '.join(pg._errs))
+
     # ---------- PROFILE / SETTINGS ----------
     pg = page(h='#/settings')
     pg.fill('#sName', 'أنس المعدّل'); pg.fill('#sBio', 'نبذة جديدة'); pg.click('.covers button[data-k="ocean"]'); pg.click('#fBtn'); pg.wait_for_timeout(600)

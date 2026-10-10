@@ -81,7 +81,9 @@
         if(table==='lg_profiles'){}
       } else {
         rows=T.filter(r=>st.filters.every(f=>f(r)));
-        if(st.op==='update'){rows.forEach(r=>Object.assign(r,st.val))}
+        if(st.op==='update'){rows.forEach(r=>{
+          if(table==='lg_posts' && ['body','category','image_url'].some(k=>k in st.val && st.val[k]!==r[k])) r.edited_at=now();
+          Object.assign(r,st.val)})}
         if(st.op==='delete'){DB[table]=T.filter(r=>!rows.includes(r));return {data:null,error:null}}
         if(st.op==='update'&&!st.ret) return {data:null,error:null};
       }
