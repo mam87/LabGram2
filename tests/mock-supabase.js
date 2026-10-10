@@ -20,11 +20,12 @@
     lg_comments:[{id:'c0000000-0000-0000-0000-000000000001',post_id:p1,user_id:u3,body:'رائع جداً 👏',parent_id:null,created_at:now(20)},
                  {id:'c0000000-0000-0000-0000-000000000002',post_id:p1,user_id:u2,body:'شكراً عمر!',parent_id:'c0000000-0000-0000-0000-000000000001',created_at:now(18)}],
     lg_follows:[{follower_id:me,following_id:u2}],
+    lg_saves:[{user_id:me,post_id:p3,created_at:now(5)}],
     lg_reports:[{id:uid(),post_id:p1,reporter_id:u3,reason:'يحتوي بيانات تعريفية لمريض',status:'open',created_at:now(15)}],
     lg_notifications:[{id:uid(),user_id:me,actor_id:u3,type:'comment',post_id:p1,comment_id:'c0000000-0000-0000-0000-000000000002',read:false,created_at:now(10)},{id:uid(),user_id:me,actor_id:u2,type:'like',post_id:p2,read:false,created_at:now(100)},{id:uid(),user_id:me,actor_id:u3,type:'follow',post_id:null,read:true,created_at:now(400)}],
   };
   const QS=new URLSearchParams(location.search);
-  if(QS.has('empty')){ for(const k of ['lg_posts','lg_likes','lg_comments','lg_follows','lg_notifications','lg_reports']) DB[k]=[]; DB.lg_profiles=DB.lg_profiles.slice(0,1); }
+  if(QS.has('empty')){ for(const k of ['lg_posts','lg_likes','lg_comments','lg_follows','lg_notifications','lg_reports','lg_saves']) DB[k]=[]; DB.lg_profiles=DB.lg_profiles.slice(0,1); }
   window.__DB=DB; window.__UPLOADS=[]; window.__CALLS=[]; let authCb=null;
   const SIGNED = location.search.includes('signed');
   const session = SIGNED?{user:{id:me,user_metadata:{}}}:null;

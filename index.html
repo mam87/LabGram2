@@ -268,6 +268,8 @@ textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;li
 .linkbtn{color:var(--muted);font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:3px;padding:6px 4px;min-height:32px}
 .linkbtn:hover{color:var(--brand)}
 .linkbtn svg{width:14px;height:14px}
+.act.saved{color:var(--brand)}
+.act.saved svg{fill:var(--brand)}
 .pin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--brand);margin:0 18px 8px}
 .pin-tag svg{width:15px;height:15px}
 .act.pinned{color:var(--brand)}
@@ -465,10 +467,10 @@ try{const t=localStorage.getItem('lg-theme'); if(t) document.documentElement.dat
 /* =====================================================================
    STATE
    ===================================================================== */
-const S = { user:null, me:null, followIds:new Set(), unread:0, posts:new Map(), recovery:false };
+const S = { user:null, me:null, followIds:new Set(), saved:new Set(), unread:0, posts:new Map(), recovery:false };
 
 async function loadMe(){
-  S.me=null; S.followIds=new Set();
+  S.me=null; S.followIds=new Set(); S.saved=new Set();
   if(!S.user) return;
   const {data,error} = await sb.from('lg_profiles').select('*').eq('id',S.user.id).maybeSingle();
   if(error) throw error;
@@ -483,6 +485,8 @@ async function loadMe(){
   if(S.me){
     const f = await sb.from('lg_follows').select('following_id').eq('follower_id',S.me.id);
     if(!f.error) S.followIds=new Set(f.data.map(x=>x.following_id));
+    const sv = await sb.from('lg_saves').select('post_id').eq('user_id',S.me.id);
+    if(!sv.error) S.saved=new Set(sv.data.map(x=>x.post_id));
     refreshUnread();
   }
 }
@@ -512,7 +516,7 @@ async function route(){
   const views={
     '':()=>renderFeed('all',b), c:()=>renderFeed('all',b), following:()=>renderFeed('following'),
     explore:()=>renderExplore(b), new:renderCreate, notifications:renderNotifications,
-    u:()=>renderProfile(b), p:()=>renderPost(b), settings:renderSettings, admin:()=>renderAdmin(b),
+    u:()=>renderProfile(b), p:()=>renderPost(b), settings:renderSettings, admin:()=>renderAdmin(b), saved:renderSaved,
   };
   (views[a]||views[''])(tok);
 }
@@ -528,6 +532,7 @@ function shell(active, inner, {aside=true}={}){
     <a href="#/">${LOGO}</a>
     <div style="display:flex;gap:4px">
       ${isOwner()?`<a class="icon-btn" href="#/admin" aria-label="لوحة التحكم" style="${active==='admin'?'color:var(--brand)':''}">${ic('shield')}</a>`:''}
+      <a class="icon-btn" href="#/saved" aria-label="المحفوظات" style="${active==='saved'?'color:var(--brand)':''}">${ic('bookmark')}</a>
       <button class="icon-btn" onclick="toggleTheme()" aria-label="الوضع">${ic(theme()==='dark'?'sun':'moon')}</button>
       <a class="icon-btn" href="#/settings" aria-label="الإعدادات">${ic('gear')}</a>
     </div>
@@ -540,6 +545,7 @@ function shell(active, inner, {aside=true}={}){
       ${nav('#/following','following','users','أتابعهم')}
       ${nav('#/explore','explore','compass','استكشاف')}
       ${nav('#/notifications','notifications','bell','التنبيهات',ub)}
+      ${nav('#/saved','saved','bookmark','المحفوظات')}
       ${nav('#/u/'+encodeURIComponent(me.username),'me','user','حسابي')}
       ${nav('#/settings','settings','gear','الإعدادات')}
       ${isOwner()?nav('#/admin','admin','shield','لوحة التحكم'):''}
@@ -768,7 +774,8 @@ function postCard(p,i=0){
     <div class="post-actions">
       <button class="act ${liked?'liked':''}" id="like-${p.id}" onclick="toggleLike('${p.id}')">${ic('heart')}<span>${fmt(p.likeSet.size)}</span></button>
       <a class="act" href="#/p/${p.id}">${ic('chat')}<span>${fmt(p.cCount)}</span></a>
-      <button class="act" onclick="sharePost('${p.id}')" title="مشاركة">${ic('share')}</button>
+      <button class="act" onclick="sharePost('${p.id}')" title="مشاركة" aria-label="مشاركة">${ic('share')}</button>
+      <button class="act ${S.saved.has(p.id)?'saved':''}" id="save-${p.id}" onclick="toggleSave('${p.id}')" title="${S.saved.has(p.id)?'إزالة من المحفوظات':'حفظ'}" aria-label="حفظ" aria-pressed="${S.saved.has(p.id)}">${ic('bookmark')}</button>
       <span style="flex:1"></span>
       ${isOwner()?`<button class="act ${p.pinned?'pinned':''}" onclick="togglePin('${p.id}')" title="${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الصفحة'}">${ic('pin')}</button>`:''}
       ${p.user_id!==S.me.id?`<button class="act" onclick="openReport('${p.id}')" title="إبلاغ">${ic('flag')}</button>`:''}
@@ -810,6 +817,34 @@ async function saveEdit(id){
   const card=document.getElementById('post-'+id), comments=card?.querySelector('.comments');
   if(card){ card.outerHTML=postCard(norm(data)); if(comments) document.getElementById('post-'+id).appendChild(comments) }
   toast('تم حفظ التعديل ✓');
+}
+
+/* ---------- saved posts (private) ---------- */
+async function toggleSave(id){
+  const had=S.saved.has(id);
+  had?S.saved.delete(id):S.saved.add(id); paintSave(id);
+  const {error}= had ? await sb.from('lg_saves').delete().eq('user_id',S.me.id).eq('post_id',id)
+                     : await sb.from('lg_saves').insert({user_id:S.me.id,post_id:id});
+  if(error && error.code!=='23505'){ had?S.saved.add(id):S.saved.delete(id); paintSave(id); return fail(error,'تعذّر الحفظ') }
+  toast(had?'أُزيل من المحفوظات':'حُفظ في المحفوظات ✓');
+  if(had && parseHash().a==='saved'){ const el=document.getElementById('post-'+id); if(el){ el.remove(); if(!document.querySelector('#saved .post')) $('#saved').innerHTML=EMPTY_SAVED } }
+}
+function paintSave(id){
+  const b=document.getElementById('save-'+id); if(!b) return;
+  const on=S.saved.has(id); b.classList.toggle('saved',on); b.setAttribute('aria-pressed',on); b.title=on?'إزالة من المحفوظات':'حفظ';
+}
+const EMPTY_SAVED=`<div class="empty glass"><div class="big">🔖</div><b>لا توجد منشورات محفوظة</b><p>اضغط على أيقونة الحفظ في أي منشور للرجوع إليه لاحقاً.</p><a class="btn btn-primary" style="margin-top:14px" href="#/">تصفح المنشورات</a></div>`;
+async function renderSaved(tok){
+  tok=tok??routeToken;
+  shell('saved',`<div class="page-head"><h2>المحفوظات</h2><span class="chip">🔒 خاصة بك</span></div>
+    <p class="muted" style="margin:-6px 0 16px;font-size:14px">لا يرى أحد غيرك ما تحفظه.</p>
+    <div id="saved"><div class="skel glass"></div></div>`);
+  const {data,error}=await sb.from('lg_saves').select('created_at,post:lg_posts('+POST_SEL+')').eq('user_id',S.me.id).order('created_at',{ascending:false}).limit(100);
+  if(stale(tok)) return;
+  if(error) return showError('#saved', error, 'تعذّر تحميل المحفوظات');
+  const posts=(data||[]).map(r=>r.post).filter(Boolean).map(norm);
+  S.saved=new Set(posts.map(p=>p.id));
+  $('#saved').innerHTML = posts.length ? posts.map(postCard).join('') : EMPTY_SAVED;
 }
 
 async function toggleLike(id){

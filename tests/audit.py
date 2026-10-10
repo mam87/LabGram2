@@ -137,6 +137,26 @@ with sync_playwright() as p:
     check('reply: notification says "replied to your comment"', 'ردّ على تعليقك' in pg.inner_text('#nl'))
     check('reply: no JS errors', not pg._errs, '; '.join(pg._errs))
 
+    # ---------- SAVED POSTS ----------
+    pg = page()
+    p3 = pg.evaluate("__DB.lg_posts[2].id"); p1 = pg.evaluate("__DB.lg_posts[0].id")
+    check('save: already-saved post shows active bookmark', pg.get_attribute(f'#save-{p3}', 'aria-pressed') == 'true')
+    pg.click(f'#save-{p1}'); pg.wait_for_timeout(300)
+    check('save: saving persists for current user only', pg.evaluate(f"__DB.lg_saves.some(r=>r.post_id=='{p1}' && r.user_id==__DB.lg_profiles[0].id)") and pg.get_attribute(f'#save-{p1}', 'aria-pressed') == 'true')
+    check('save: success feedback shown', 'حُفظ' in pg.evaluate("document.getElementById('toast').textContent"))
+    pg.goto(URL + '?signed#/saved'); pg.wait_for_timeout(600)
+    ids = pg.evaluate("[...document.querySelectorAll('#saved .post')].map(e=>e.id.replace('post-',''))")
+    check('save: saved page lists saved posts, newest first', ids[:2] == [p1, p3], str(ids))
+    check('save: privacy note shown', 'لا يرى أحد غيرك' in pg.inner_text('#main'))
+    pg.click(f'#save-{p1}'); pg.wait_for_timeout(300); pg.click(f'#save-{p3}'); pg.wait_for_timeout(300)
+    check('save: unsave on saved page removes card + DB row', pg.locator('#saved .post').count() == 0 and pg.evaluate("__DB.lg_saves.length") == 0)
+    check('save: empty state after last unsave', 'لا توجد منشورات محفوظة' in pg.inner_text('#saved'))
+    pg.set_viewport_size({'width': 375, 'height': 740}); pg.wait_for_timeout(200)
+    check('save: mobile top bar has saved link, no overflow', pg.locator('.topbar a[href="#/saved"]').is_visible() and pg.evaluate('document.documentElement.scrollWidth') <= 375)
+    check('save: no JS errors', not pg._errs, '; '.join(pg._errs))
+    pg = page('?signed&err=lg_saves', '#/saved')
+    check('save: load failure shows error state with retry', pg.locator('#saved .state-error button').count() == 1)
+
     # ---------- PROFILE / SETTINGS ----------
     pg = page(h='#/settings')
     pg.fill('#sName', 'أنس المعدّل'); pg.fill('#sBio', 'نبذة جديدة'); pg.click('.covers button[data-k="ocean"]'); pg.click('#fBtn'); pg.wait_for_timeout(600)
