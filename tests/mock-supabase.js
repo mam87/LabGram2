@@ -76,6 +76,7 @@
     function run(){
       window.__CALLS.push(table+':'+st.op);
       if(QS.get('err')===table) return {data:null,error:{message:'simulated network failure',code:'XX000'}};
+      if(QS.get('err1')===table && !window.__err1done){ window.__err1done=true; return {data:null,error:{message:'simulated one-off failure',code:'XX000'}}; }
       if(QS.has('setup')) return {data:null,error:{message:'Could not find the table public.'+table+' in the schema cache',code:'PGRST205'}};
       const T=DB[table]; let rows;
       if(st.op==='insert'){

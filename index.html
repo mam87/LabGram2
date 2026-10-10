@@ -270,6 +270,20 @@ textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;li
 .linkbtn svg{width:14px;height:14px}
 .act.saved{color:var(--brand)}
 .act.saved svg{fill:var(--brand)}
+.skel-rows{padding:8px}
+.skel-row{display:flex;align-items:center;gap:12px;padding:10px 8px}
+.skel-row span{width:44px;height:44px;border-radius:50%;flex:none}
+.skel-row i{flex:1;height:14px;border-radius:7px}
+.skel-row span,.skel-row i{background:linear-gradient(90deg,var(--hover) 25%,var(--line) 50%,var(--hover) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+.state-error>b{display:block;font-size:16px}
+.menu-wrap{position:relative}
+.menu{position:absolute;bottom:calc(100% + 6px);inset-inline-end:0;min-width:210px;padding:6px;z-index:30;background:var(--glass-strong);box-shadow:var(--shadow-lg)}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;border-radius:12px;font-weight:600;font-size:14.5px;text-align:start}
+.menu button:hover,.menu button:focus-visible{background:var(--hover);outline:none}
+.menu button svg{width:18px;height:18px}
+.menu button.danger{color:var(--danger)}
+.counter{direction:ltr}
+.logo{white-space:nowrap}
 .pin-tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--brand);margin:0 18px 8px}
 .pin-tag svg{width:15px;height:15px}
 .act.pinned{color:var(--brand)}
@@ -396,6 +410,7 @@ const P = {
   pin:'<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
   ban:'<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
   chart:'<path d="M3 3v18h18"/><path d="M8 17V11M13 17V7M18 17v-4"/>',
+  dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   pencil:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',
   reply:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/>',
@@ -419,6 +434,7 @@ function avatar(p,s=42){
 const badge = p => p?.role==='owner' ? `<span class="badge" title="مالك المنصة">${ic('check')}</span>`
   : p?.verified ? `<span class="badge v" title="حساب موثّق">${ic('check')}</span>` : '';
 const isOwner = () => S.me?.role==='owner';
+const SKEL_ROWS = `<div class="skel-rows" aria-busy="true" aria-label="جارٍ التحميل">${'<div class="skel-row"><span></span><i></i></div>'.repeat(3)}</div>`;
 const rtf = new Intl.RelativeTimeFormat('ar',{numeric:'auto',style:'short'});
 function ago(iso){
   const s=(new Date(iso)-Date.now())/1000, a=Math.abs(s);
@@ -510,6 +526,7 @@ async function route(){
   const tok=++routeToken;
   if(S.recovery) return renderRecovery();
   if(!S.user) return renderAuth();
+  if(S.bootErr) return renderBootError();
   if(!S.me) return renderCompleteProfile();
   const {a,b}=parseHash();
   window.scrollTo({top:0});
@@ -561,7 +578,7 @@ function shell(active, inner, {aside=true}={}){
     <main id="main">${me.banned?`<div class="banned-bar glass">${ic('ban')} حسابك موقوف من إدارة المنصة — لا يمكنك النشر أو التعليق حالياً.</div>`:''}${inner}</main>
 
     <aside class="aside">
-      ${aside?`<div class="panel glass" id="sugPanel"><h3>مقترحون للمتابعة</h3><div id="sug"><div class="muted" style="font-size:14px">جارٍ التحميل…</div></div></div>`:''}
+      ${aside?`<div class="panel glass" id="sugPanel"><h3>مقترحون للمتابعة</h3><div id="sug" aria-busy="true">${SKEL_ROWS}</div></div>`:''}
       <div class="panel glass"><h3>الأقسام</h3><div class="cat-list">${CATS.map(c=>`<a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>`).join('')}</div></div>
       <div class="foot">LabGram · مجتمع أخصائيي المختبرات والمهنيين الصحيين © ${new Date().getFullYear()}</div>
     </aside>
@@ -777,13 +794,28 @@ function postCard(p,i=0){
       <button class="act" onclick="sharePost('${p.id}')" title="مشاركة" aria-label="مشاركة">${ic('share')}</button>
       <button class="act ${S.saved.has(p.id)?'saved':''}" id="save-${p.id}" onclick="toggleSave('${p.id}')" title="${S.saved.has(p.id)?'إزالة من المحفوظات':'حفظ'}" aria-label="حفظ" aria-pressed="${S.saved.has(p.id)}">${ic('bookmark')}</button>
       <span style="flex:1"></span>
-      ${isOwner()?`<button class="act ${p.pinned?'pinned':''}" onclick="togglePin('${p.id}')" title="${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الصفحة'}">${ic('pin')}</button>`:''}
-      ${p.user_id!==S.me.id?`<button class="act" onclick="openReport('${p.id}')" title="إبلاغ">${ic('flag')}</button>`:''}
-      ${p.user_id===S.me.id?`<button class="act" onclick="startEdit('${p.id}')" title="تعديل">${ic('pencil')}</button>`:''}
-      ${canDelete(p)?`<button class="act" onclick="deletePost('${p.id}')" title="حذف">${ic('trash')}</button>`:''}
+      <div class="menu-wrap">
+        <button class="act" aria-label="خيارات المنشور" aria-haspopup="menu" aria-expanded="false" onclick="toggleMenu(this)">${ic('dots')}</button>
+        <div class="menu glass hidden" role="menu">
+          ${p.user_id===S.me.id?`<button role="menuitem" onclick="closeMenus();startEdit('${p.id}')" title="تعديل">${ic('pencil')} تعديل المنشور</button>`:''}
+          ${isOwner()?`<button role="menuitem" onclick="closeMenus();togglePin('${p.id}')" title="${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الصفحة'}">${ic('pin')} ${p.pinned?'إلغاء التثبيت':'تثبيت أعلى الرئيسية'}</button>`:''}
+          ${p.user_id!==S.me.id?`<button role="menuitem" onclick="closeMenus();openReport('${p.id}')" title="إبلاغ">${ic('flag')} إبلاغ عن المنشور</button>`:''}
+          ${canDelete(p)?`<button role="menuitem" class="danger" onclick="closeMenus();deletePost('${p.id}')" title="حذف">${ic('trash')} حذف</button>`:''}
+        </div>
+      </div>
     </div>
   </article>`;
 }
+
+/* ---------- post "more" menu ---------- */
+function closeMenus(){ document.querySelectorAll('.menu').forEach(m=>m.classList.add('hidden')); document.querySelectorAll('[aria-haspopup="menu"]').forEach(b=>b.setAttribute('aria-expanded','false')) }
+function toggleMenu(btn){
+  const m=btn.nextElementSibling, open=m.classList.contains('hidden');
+  closeMenus();
+  if(open){ m.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); m.querySelector('button')?.focus() }
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.menu-wrap')) closeMenus() });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenus() });
 
 /* ---------- edit post (author only; enforced by the database) ---------- */
 function startEdit(id){
@@ -917,7 +949,7 @@ async function loadFeed(){
     first&&st.showPinned ? sb.from('lg_posts').select(POST_SEL).eq('pinned',true).order('created_at',{ascending:false}).limit(3) : Promise.resolve({data:[]}),
   ]);
   if(stale(st.tok)) return;
-  if(error) return fail(error,'تعذّر تحميل المنشورات');
+  if(error){ if(st.offset===0) showError(box,error,'تعذّر تحميل المنشورات'); else fail(error,'تعذّر تحميل المزيد'); $('#more').innerHTML=st.offset?`<button class="btn btn-ghost" onclick="this.disabled=true;loadFeed()">إعادة المحاولة</button>`:''; return }
   if(first) box.innerHTML=(pin.data||[]).map(norm).map(postCard).join('');
   const posts=data.map(norm);
   if(!posts.length && first && !(pin.data||[]).length){
@@ -1089,7 +1121,7 @@ async function renderProfile(username,tok){
   shell(mine?'me':'',`<div id="pf"><div class="skel glass" style="height:340px"></div></div>`);
   const {data:p,error}=await sb.from('lg_profiles').select('*').eq('username',username).maybeSingle();
   if(stale(tok)) return;
-  if(error) return fail(error);
+  if(error) return showError('#pf',error,'تعذّر تحميل الملف الشخصي');
   if(!p){ $('#pf').innerHTML=`<div class="empty glass"><div class="big">🔍</div><b>المستخدم غير موجود</b></div>`; return }
   const [posts,fers,fing,pcount]=await Promise.all([
     sb.from('lg_posts').select(POST_SEL).eq('user_id',p.id).order('created_at',{ascending:false}).limit(60),
@@ -1148,13 +1180,14 @@ async function renderExplore(q0='',tok){
   shell('explore',`
     <div class="page-head"><h2>استكشاف</h2></div>
     <div class="search">${ic('search')}<input class="input glass" id="q" placeholder="ابحث عن زميل بالاسم أو اسم المستخدم أو التخصص…" value="${esc(q0)}" autocomplete="off"></div>
-    <div class="glass list" id="people"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>
+    <div class="glass list" id="people">${SKEL_ROWS}</div>
     <div class="page-head" style="margin-top:26px"><h2 style="font-size:19px">أحدث الصور</h2></div>
     <div class="grid" id="gal"></div>`,{aside:true});
   let t; $('#q').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>searchPeople(e.target.value),250)});
   searchPeople(q0);
-  const {data}=await sb.from('lg_posts').select(POST_SEL).not('image_url','is',null).order('created_at',{ascending:false}).limit(24);
+  const {data,error:gErr}=await sb.from('lg_posts').select(POST_SEL).not('image_url','is',null).order('created_at',{ascending:false}).limit(24);
   if(stale(tok)||!$('#gal')) return;
+  if(gErr) return showError('#gal',gErr,'تعذّر تحميل الصور');
   $('#gal').innerHTML=(data||[]).map(norm).map(x=>`<a class="tile" href="#/p/${x.id}"><img src="${esc(x.image_url)}" alt="" loading="lazy"><div class="ov"><span>${ic('heart')} ${fmt(x.likeSet.size)}</span><span>${ic('chat')} ${fmt(x.cCount)}</span></div></a>`).join('') || `<p class="muted">لا توجد صور بعد.</p>`;
 }
 async function searchPeople(q){
@@ -1168,7 +1201,7 @@ async function searchPeople(q){
   } else r=r.order('created_at',{ascending:false});
   const {data,error}=await r;
   const box=$('#people'); if(!box) return;
-  if(error) return fail(error);
+  if(error) return showError(box,error,'تعذّر البحث');
   box.innerHTML = data.length ? data.map(p=>{const f=S.followIds.has(p.id);return `
     <div class="row">
       <a href="#/u/${encodeURIComponent(p.username)}">${avatar(p,48)}</a>
@@ -1182,12 +1215,12 @@ async function searchPeople(q){
    ===================================================================== */
 async function renderNotifications(tok){
   tok=tok??routeToken;
-  shell('notifications',`<div class="page-head"><h2>التنبيهات</h2></div><div class="glass list" id="nl"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`);
+  shell('notifications',`<div class="page-head"><h2>التنبيهات</h2></div><div class="glass list" id="nl">${SKEL_ROWS}</div>`);
   const {data,error}=await sb.from('lg_notifications')
     .select('id,type,read,created_at,post_id,comment_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role,verified)')
     .eq('user_id',S.me.id).order('created_at',{ascending:false}).limit(60);
   if(stale(tok)) return;
-  if(error) return fail(error);
+  if(error) return showError('#nl',error,'تعذّر تحميل التنبيهات');
   const T={like:['أعجب بمنشورك','heart','#ec4899'],comment:['علّق على منشورك','chat','#6d5dfc'],follow:['بدأ بمتابعتك','user','#06b6d4']};
   $('#nl').innerHTML = data.length ? data.map(n=>{
     const a=n.actor||{}, t=n.type==='comment'&&n.comment_id?['ردّ على تعليقك','reply','#8b5cf6']:(T[n.type]||T.like), href=n.post_id?'#/p/'+n.post_id:'#/u/'+encodeURIComponent(a.username||'');
@@ -1324,7 +1357,7 @@ async function admOverview(){
     sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,role,verified,created_at').order('created_at',{ascending:false}).limit(5),
   ]);
   if(!$('#adm')) return;
-  if(u.error) return fail(u.error);
+  if(u.error) return showError('#adm',u.error);
   const days=[...Array(14)].map((_,i)=>{const d=new Date(since.getTime()+i*864e5);return {k:d.toDateString(),d:d.getDate(),p:0,u:0}});
   const idx=Object.fromEntries(days.map((d,i)=>[d.k,i]));
   (ps.data||[]).forEach(r=>{const i=idx[new Date(r.created_at).toDateString()]; if(i!=null) days[i].p++});
@@ -1355,13 +1388,13 @@ async function admOverview(){
 
 async function admUsers(){
   $('#adm').innerHTML=`<div class="search">${ic('search')}<input class="input glass" id="uq" placeholder="ابحث بالاسم أو اسم المستخدم أو البريد…" value="${esc(ADM.q)}" autocomplete="off"></div>
-    <div class="glass list" id="ul"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`;
+    <div class="glass list" id="ul">${SKEL_ROWS}</div>`;
   $('#uq').addEventListener('input',e=>{ADM.q=e.target.value;drawUsers()});
   const [pr,em]=await Promise.all([
     sb.from('lg_profiles').select('*').order('created_at',{ascending:false}).limit(1000),
     sb.rpc('lg_admin_users'),
   ]);
-  if(pr.error) return fail(pr.error);
+  if(pr.error) return showError('#ul',pr.error);
   ADM.users=pr.data; ADM.emails=Object.fromEntries((em.data||[]).map(r=>[r.id,r]));
   drawUsers();
 }
@@ -1407,7 +1440,7 @@ async function admReports(){
     .select('id,reason,status,created_at,post_id,reporter:lg_profiles!lg_reports_reporter_id_fkey(id,username,display_name,avatar_url,role,verified),post:lg_posts(id,body,image_url,user_id,author:lg_profiles!lg_posts_user_id_fkey(username,display_name))')
     .order('created_at',{ascending:false}).limit(200);
   if(!$('#adm')) return;
-  if(error) return fail(error);
+  if(error) return showError('#adm',error);
   const list=data.filter(r=>ADM.showResolved||r.status==='open');
   $('#adm').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px">
@@ -1445,7 +1478,7 @@ async function admDeleteReported(postId){
 async function admPosts(){
   const {data,error}=await sb.from('lg_posts').select(POST_SEL).order('pinned',{ascending:false}).order('created_at',{ascending:false}).limit(60);
   if(!$('#adm')) return;
-  if(error) return fail(error);
+  if(error) return showError('#adm',error);
   const list=data.map(norm);
   $('#adm').innerHTML=`<div class="glass list">${list.map(p=>`
     <div class="row adm-row" id="post-${p.id}">
@@ -1466,8 +1499,22 @@ async function admPosts(){
    BOOT
    ===================================================================== */
 async function setSession(session){
-  S.user=session?.user||null;
-  try{ await loadMe() }catch(e){ if(isSetupError(e)) { S.setupErr=e; } else console.error(e) }
+  S.user=session?.user||null; S.bootErr=null;
+  try{ await loadMe() }catch(e){ if(isSetupError(e)) { S.setupErr=e; } else { console.error(e); S.bootErr=e } }
+}
+// Own profile could not be loaded (network/server): never mistake that for "no profile yet"
+function renderBootError(){
+  root().innerHTML=`<div class="auth" style="grid-template-columns:1fr"><section class="auth-card glass state-error" role="alert" style="text-align:center">
+    ${LOGO}<div class="big" style="font-size:44px;margin:18px 0 6px">${navigator.onLine?'⚠️':'📡'}</div>
+    <h2 style="font-family:'Readex Pro';font-size:20px">${navigator.onLine?'تعذّر الاتصال بالخادم':'لا يوجد اتصال بالإنترنت'}</h2>
+    <p class="muted" style="margin:6px 0 18px">بياناتك بأمان. حاول مرة أخرى بعد قليل.</p>
+    <button class="btn btn-primary btn-block" id="bootRetry" onclick="retryBoot()">إعادة المحاولة</button>
+    <p style="margin-top:14px"><span class="link" onclick="logout()">تسجيل الخروج</span></p></section></div>`;
+}
+async function retryBoot(){
+  const b=$('#bootRetry'); if(b){ b.disabled=true; b.innerHTML='<span class="spin"></span>' }
+  const {data:{session}}=await sb.auth.getSession();
+  await setSession(session); route();
 }
 (async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -1485,6 +1532,8 @@ async function setSession(session){
   });
   addEventListener('hashchange',()=>{ if(/access_token|error_description/.test(location.hash)) return; route() });
   setInterval(refreshUnread,60000);
+  addEventListener('offline',()=>toast('📡 انقطع الاتصال بالإنترنت'));
+  addEventListener('online',()=>{ toast('✓ عاد الاتصال'); refreshUnread() });
 })();
 </script>
 </body>
