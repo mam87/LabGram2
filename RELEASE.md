@@ -39,7 +39,7 @@ Status legend: ✅ verified (test actually run) · ⚠️ needs owner action / n
 ## 7. Mobile usability
 - ✅ No horizontal overflow at 375/390 px on all tested screens; tap targets ≥ 36 px (menus ≥ 44 px).
 - ✅ Post actions consolidated in an accessible "⋯" menu (keyboard, Escape, focus).
-- ⚠️ Colour contrast: 5 elements below WCAG AA measured (see Figma notes); fixes proposed, not yet implemented.
+- ✅ Colour contrast: the 5 elements measured below WCAG AA now pass (white on button/active-chip gradient ≥ 5.36:1, chip text 5.82:1 light / 6.95:1 dark, like count and unread badge 6.04:1). Computed styles checked in Chromium in light and dark mode.
 - ⚠️ Not tested on real devices or with a screen reader.
 
 ## 8. Backup and recovery
@@ -48,7 +48,7 @@ Status legend: ✅ verified (test actually run) · ⚠️ needs owner action / n
 - ⚠️ Off-site backup: download a `pg_dump` from a computer (Supabase → Settings → Database → connection string) or upgrade to Pro for daily backups. The in-database snapshot does not protect against loss of the project.
 - Uploaded images live in Storage and are not touched by migrations.
 
-## 9. Deployment (requires owner approval)
+## 9. Deployment (approved and run 2026-10-10)
 Order matters — the new frontend reads columns that only exist after the migration.
 1. Run `migrations/20261010_backup.sql`; confirm counts match.
 2. Apply `migrations/20261010_beta_features.up.sql` (additive only; current live site keeps working).
@@ -63,4 +63,4 @@ Order matters — the new frontend reads columns that only exist after the migra
 
 ## Known gaps (not in this release)
 - English / LTR interface (the one expected failure in tests/audit.py).
-- Figma proposals awaiting approval: structured case fields, professional title/workplace, post types, contrast fixes.
+- Figma proposals awaiting approval (need new database columns): structured case fields, professional title/workplace, post types.
