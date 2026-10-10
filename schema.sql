@@ -347,3 +347,167 @@ begin
 end $$;
 revoke execute on function public.lg_admin_users() from public, anon;
 grant execute on function public.lg_admin_users() to authenticated;
+
+-- =====================================================================
+-- 9) تدقيق ما قبل الإطلاق (2026-10-10): حماية إضافية
+--    مطبّق على المشروع الحالي كـ migration: labgram_audit_hardening
+-- =====================================================================
+-- (أ) تريغر التسجيل القديم لا يمنع التسجيل أبداً (كان يفشل مع أسماء تختلف بحالة الأحرف)
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path to 'public' as $$
+begin
+  begin
+    insert into public.profiles (id, username, display_name, bio, specialty)
+    values (new.id,
+      coalesce(new.raw_user_meta_data->>'username', split_part(new.email,'@',1)),
+      coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email,'@',1)),
+      coalesce(new.raw_user_meta_data->>'bio', ''),
+      coalesce(new.raw_user_meta_data->>'specialty', 'General'));
+  exception when others then null;
+  end;
+  return new;
+end $$;
+-- ملاحظة: الدالة أعلاه تخص الجداول القديمة؛ في مشروع جديد بلا جدول profiles لا حاجة لها.
+
+create or replace function public.lg_media_prefix()
+returns text language sql immutable set search_path = '' as $$
+  -- غيّر الرابط إذا نُقل المشروع إلى Supabase آخر
+  select 'https://ualumobbhukgmjbznhea.supabase.co/storage/v1/object/public/lg-media/'::text;
+$$;
+
+create unique index if not exists lg_profiles_username_lower_idx on public.lg_profiles (lower(username));
+
+create or replace function public.lg_username_available(u text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (select 1 from public.lg_profiles where lower(username) = lower(trim(u)));
+$$;
+grant execute on function public.lg_username_available(text) to anon, authenticated;
+
+create or replace function public.lg_guard_role()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' or new.username is distinct from old.username then
+    new.username := lower(new.username);
+  end if;
+  if auth.uid() is null then return new; end if;
+  if tg_op = 'INSERT' then
+    new.role := 'user'; new.verified := false; new.banned := false; new.created_at := now();
+  else
+    new.created_at := old.created_at;
+    if (new.role is distinct from old.role or new.verified is distinct from old.verified or new.banned is distinct from old.banned)
+       and not public.lg_is_owner() then
+      raise exception 'غير مسموح بتغيير الصلاحيات';
+    end if;
+  end if;
+  if new.avatar_url is not null and new.avatar_url not like public.lg_media_prefix() || new.id::text || '/%' then
+    raise exception 'رابط الصورة غير مسموح';
+  end if;
+  return new;
+end $$;
+
+create or replace function public.lg_guard_post()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  if tg_op = 'INSERT' then
+    new.pinned := false; new.created_at := now();
+    if not public.lg_is_owner() and
+       (select count(*) from public.lg_posts where user_id = new.user_id and created_at > now() - interval '10 minutes') >= 10 then
+      raise exception 'وصلت إلى الحد المسموح (10 منشورات كل 10 دقائق). حاول لاحقاً';
+    end if;
+  else
+    new.created_at := old.created_at;
+    if new.pinned is distinct from old.pinned and not public.lg_is_owner() then
+      raise exception 'التثبيت للمالك فقط';
+    end if;
+  end if;
+  if new.image_url is not null and new.image_url not like public.lg_media_prefix() || new.user_id::text || '/%' then
+    raise exception 'رابط الصورة غير مسموح';
+  end if;
+  return new;
+end $$;
+
+create or replace function public.lg_guard_comment()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  new.created_at := now();
+  if not public.lg_is_owner() and
+     (select count(*) from public.lg_comments where user_id = new.user_id and created_at > now() - interval '10 minutes') >= 30 then
+    raise exception 'وصلت إلى الحد المسموح من التعليقات. حاول بعد قليل';
+  end if;
+  return new;
+end $$;
+drop trigger if exists lg_guard_comment on public.lg_comments;
+create trigger lg_guard_comment before insert on public.lg_comments for each row execute function public.lg_guard_comment();
+
+create or replace function public.lg_guard_report()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  new.status := 'open'; new.created_at := now();
+  if (select count(*) from public.lg_reports where reporter_id = new.reporter_id and created_at > now() - interval '1 hour') >= 20 then
+    raise exception 'وصلت إلى الحد المسموح من البلاغات. حاول لاحقاً';
+  end if;
+  return new;
+end $$;
+drop trigger if exists lg_guard_report on public.lg_reports;
+create trigger lg_guard_report before insert on public.lg_reports for each row execute function public.lg_guard_report();
+
+create or replace function public.lg_notify()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare target uuid;
+begin
+  if tg_table_name = 'lg_likes' then
+    select user_id into target from public.lg_posts where id = new.post_id;
+    if target is not null and target <> new.user_id and not exists (
+      select 1 from public.lg_notifications where user_id = target and actor_id = new.user_id
+        and type = 'like' and post_id = new.post_id and created_at > now() - interval '1 day') then
+      insert into public.lg_notifications (user_id, actor_id, type, post_id) values (target, new.user_id, 'like', new.post_id);
+    end if;
+  elsif tg_table_name = 'lg_comments' then
+    select user_id into target from public.lg_posts where id = new.post_id;
+    if target is not null and target <> new.user_id then
+      insert into public.lg_notifications (user_id, actor_id, type, post_id) values (target, new.user_id, 'comment', new.post_id);
+    end if;
+  elsif tg_table_name = 'lg_follows' then
+    if not exists (select 1 from public.lg_notifications where user_id = new.following_id and actor_id = new.follower_id
+        and type = 'follow' and created_at > now() - interval '1 day') then
+      insert into public.lg_notifications (user_id, actor_id, type) values (new.following_id, new.follower_id, 'follow');
+    end if;
+  end if;
+  return new;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname='lg_profiles_display_name_len') then
+    alter table public.lg_profiles add constraint lg_profiles_display_name_len check (char_length(coalesce(display_name,'')) <= 60); end if;
+  if not exists (select 1 from pg_constraint where conname='lg_profiles_specialty_len') then
+    alter table public.lg_profiles add constraint lg_profiles_specialty_len check (char_length(coalesce(specialty,'')) <= 40); end if;
+  if not exists (select 1 from pg_constraint where conname='lg_profiles_cover_valid') then
+    alter table public.lg_profiles add constraint lg_profiles_cover_valid check (cover in ('aurora','sunset','ocean','night','rose','forest')); end if;
+  if not exists (select 1 from pg_constraint where conname='lg_posts_category_valid') then
+    alter table public.lg_posts add constraint lg_posts_category_valid check (category in ('General','Histopathology','Cytology','Microbiology','Hematology','Clinical Chemistry','Immunology','Molecular','Blood Bank','Laboratory Quality')); end if;
+end $$;
+
+revoke execute on function public.lg_guard_comment(), public.lg_guard_report(), public.handle_new_user() from public, anon, authenticated;
+create index if not exists lg_comments_user_created_idx on public.lg_comments (user_id, created_at desc);
+create index if not exists lg_notif_dedupe_idx on public.lg_notifications (user_id, actor_id, type, created_at desc);
+
+-- =====================================================================
+-- 10) خاص بهذا المشروع: إغلاق الجداول والمخازن القديمة (migration: labgram_legacy_lockdown)
+--     البيانات محفوظة. للتراجع: grant select, insert, update, delete on <table> to authenticated;
+-- =====================================================================
+do $$ begin
+  if to_regclass('public.profiles') is not null then
+    revoke all on public.profiles, public.posts, public.likes, public.comments, public.follows,
+                  public.conversations, public.conversation_members, public.messages,
+                  public.notifications, public.reports from anon, authenticated;
+  end if;
+end $$;
+drop policy if exists legacy_buckets_no_insert on storage.objects;
+drop policy if exists legacy_buckets_no_update on storage.objects;
+drop policy if exists legacy_buckets_no_list   on storage.objects;
+create policy legacy_buckets_no_insert on storage.objects as restrictive for insert to public with check (bucket_id not in ('avatars','post-images'));
+create policy legacy_buckets_no_update on storage.objects as restrictive for update to public using (bucket_id not in ('avatars','post-images'));
+create policy legacy_buckets_no_list   on storage.objects as restrictive for select to public using (bucket_id not in ('avatars','post-images'));

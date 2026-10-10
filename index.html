@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/supabase-js-2.117.3.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R"></script>
 <style>
 :root{
   --bg:#f3f4fb; --text:#141a2e; --muted:#69708a; --line:rgba(20,26,46,.08);
@@ -417,7 +417,8 @@ function isSetupError(e){
 function fail(e,fallback='حدث خطأ، حاول مرة أخرى'){
   console.error(e);
   if(isSetupError(e)){ renderSetup(e); return; }
-  toast(fallback);
+  // P0001 = message raised by our own database rules (rate limits, permissions) — already user-facing Arabic
+  toast(e?.code==='P0001' && e.message ? e.message : fallback);
 }
 
 /* ---------- theme ---------- */
@@ -624,16 +625,16 @@ async function doLogin(){
   if(error) return setMsg(authErr(error));
 }
 async function doRegister(){
-  const username=$('#fUser').value.trim(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
+  const username=$('#fUser').value.trim().toLowerCase(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
   const email=$('#fEmail').value.trim(), pass=$('#fPass').value;
   if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
   if(!display) return setMsg('أدخل اسمك الكامل');
   if(!email) return setMsg('أدخل البريد الإلكتروني');
   if(pass.length<6) return setMsg('كلمة المرور 6 أحرف على الأقل');
   busy(true);
-  const chk=await sb.from('lg_profiles').select('id').eq('username',username).maybeSingle();
+  const chk=await sb.rpc('lg_username_available',{u:username});
   if(chk.error && isSetupError(chk.error)){busy(false);return renderSetup(chk.error)}
-  if(chk.data){busy(false);return setMsg('اسم المستخدم محجوز، اختر اسماً آخر')}
+  if(chk.data===false){busy(false);return setMsg('اسم المستخدم محجوز، اختر اسماً آخر')}
   const {data,error}=await sb.auth.signUp({email,password:pass,options:{
     data:{username,display_name:display,specialty,bio:''},
     emailRedirectTo:location.origin+location.pathname
@@ -683,7 +684,7 @@ function renderCompleteProfile(){
   </section></div>`;
 }
 async function doComplete(){
-  const username=$('#fUser').value.trim(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
+  const username=$('#fUser').value.trim().toLowerCase(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
   if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
   busy(true);
   const {data,error}=await sb.from('lg_profiles').insert({id:S.user.id,username,display_name:display,specialty}).select().single();
@@ -949,10 +950,11 @@ async function renderProfile(username,tok){
   if(stale(tok)) return;
   if(error) return fail(error);
   if(!p){ $('#pf').innerHTML=`<div class="empty glass"><div class="big">🔍</div><b>المستخدم غير موجود</b></div>`; return }
-  const [posts,fers,fing]=await Promise.all([
+  const [posts,fers,fing,pcount]=await Promise.all([
     sb.from('lg_posts').select(POST_SEL).eq('user_id',p.id).order('created_at',{ascending:false}).limit(60),
     sb.from('lg_follows').select('follower_id',{count:'exact',head:true}).eq('following_id',p.id),
     sb.from('lg_follows').select('following_id',{count:'exact',head:true}).eq('follower_id',p.id),
+    sb.from('lg_posts').select('id',{count:'exact',head:true}).eq('user_id',p.id),
   ]);
   if(stale(tok)) return;
   const list=(posts.data||[]).map(norm), isMe=p.id===S.me.id, following=S.followIds.has(p.id), c=cat(p.specialty);
@@ -969,7 +971,7 @@ async function renderProfile(username,tok){
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><span class="chip">${c.e} ${c.ar}</span>${p.role==='owner'?'<span class="chip" style="background:rgba(236,72,153,.12);color:var(--pink)">⭐ مالك المنصة</span>':''}</div>
         ${p.bio?`<div class="bio">${esc(p.bio)}</div>`:''}
         <div class="stats">
-          <div><b>${fmt(list.length)}</b><span>منشورات</span></div>
+          <div><b>${fmt(pcount.count ?? list.length)}</b><span>منشورات</span></div>
           <div><b id="fcount">${fmt(fers.count)}</b><span>متابِعون</span></div>
           <div><b>${fmt(fing.count)}</b><span>يتابع</span></div>
         </div>
@@ -1015,7 +1017,7 @@ async function renderExplore(q0='',tok){
   $('#gal').innerHTML=(data||[]).map(norm).map(x=>`<a class="tile" href="#/p/${x.id}"><img src="${esc(x.image_url)}" alt="" loading="lazy"><div class="ov"><span>${ic('heart')} ${fmt(x.likeSet.size)}</span><span>${ic('chat')} ${fmt(x.cCount)}</span></div></a>`).join('') || `<p class="muted">لا توجد صور بعد.</p>`;
 }
 async function searchPeople(q){
-  q=(q||'').trim().replace(/[,()%*\\]/g,'');
+  q=(q||'').trim().replace(/[,()%*\\"]/g,'').slice(0,60);
   let r=sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,bio,role,verified').neq('id',S.me.id).limit(20);
   if(q){
     const specs=CATS.filter(c=>c.ar.includes(q)).map(c=>c.k);
@@ -1101,7 +1103,8 @@ async function changePass(){
   $('#sPass').value=''; m.className='msg ok'; m.textContent='✅ تم تحديث كلمة المرور'; toast('تم تحديث كلمة المرور ✅');
 }
 async function saveSettings(){
-  const username=$('#sUser').value.trim();
+  const typed=$('#sUser').value.trim();
+  const username = typed===S.me.username ? typed : typed.toLowerCase();
   if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
   const upd={display_name:$('#sName').value.trim(),username,specialty:$('#sSpec').value,bio:$('#sBio').value.trim(),cover:document.querySelector('.covers button.on')?.dataset.k||'aurora'};
   busy(true);
