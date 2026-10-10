@@ -56,7 +56,7 @@ psql -h /tmp -p 54329 -U postgres -d labgram_staging -f staging/test_permissions
 
 ## Deployment checklist
 1. **Supabase → Authentication → URL Configuration** — set **Site URL** to the live address (e.g. `https://mam87.github.io/LabGram2/`) and add it to **Redirect URLs**. Without this, confirmation and password-reset emails link to `localhost` and fail.
-2. **Supabase → Authentication → Providers → Email / Password security** — enable *Leaked password protection*.
+2. **Supabase → Authentication → Sign In / Providers → Email** — minimum password length 8 and *letters and digits* (matches the app). *Leaked password protection* needs the Pro plan.
 3. **Custom SMTP** (Supabase → Authentication → SMTP) before real launch: the built-in sender is rate-limited to a few emails per hour.
 4. **GitHub → Settings → Pages** — deploy from branch `main`, root folder.
 5. Make your account owner (section 7 of `schema.sql`).
