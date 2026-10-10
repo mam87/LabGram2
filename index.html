@@ -2,265 +2,1075 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LabGram</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LabGram — مجتمع المختبرات</title>
+<meta name="description" content="LabGram — الشبكة الاجتماعية لأخصائيي المختبرات والمهنيين الصحيين">
+<meta name="theme-color" content="#6d5dfc">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236d5dfc'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M26 14h12M28 14v14L18 46a4 4 0 0 0 3.5 6h21a4 4 0 0 0 3.5-6L36 28V14' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='29' cy='42' r='3' fill='white'/%3E%3Ccircle cx='37' cy='45' r='2' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#f0f4f8;font-family:Arial,sans-serif;direction:rtl;padding:20px}
-.container{max-width:400px;margin:50px auto;background:#fff;border-radius:16px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
-.logo{font-size:28px;font-weight:900;color:#2563eb;text-align:center}
-.logo span{color:#3b82f6}
-.sub{text-align:center;color:#64748b;margin:8px 0 24px}
+:root{
+  --bg:#f3f4fb; --text:#141a2e; --muted:#69708a; --line:rgba(20,26,46,.08);
+  --glass:rgba(255,255,255,.66); --glass-strong:rgba(255,255,255,.86); --glass-line:rgba(255,255,255,.75);
+  --input:rgba(255,255,255,.75); --hover:rgba(109,93,252,.08);
+  --brand:#6d5dfc; --brand2:#06b6d4; --pink:#ec4899; --danger:#ef4444; --ok:#10b981;
+  --grad:linear-gradient(135deg,#6d5dfc 0%,#8b5cf6 40%,#06b6d4 100%);
+  --shadow:0 1px 2px rgba(20,26,46,.04),0 12px 32px -12px rgba(40,40,110,.18);
+  --shadow-lg:0 30px 60px -20px rgba(40,40,110,.30);
+  --blob-o:.55; --dot:rgba(20,26,46,.10);
+  --r:20px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#070b18; --text:#eef1ff; --muted:#9aa3c0; --line:rgba(255,255,255,.08);
+    --glass:rgba(20,26,50,.55); --glass-strong:rgba(22,28,54,.88); --glass-line:rgba(255,255,255,.08);
+    --input:rgba(255,255,255,.05); --hover:rgba(139,124,255,.12);
+    --shadow:0 1px 2px rgba(0,0,0,.2),0 16px 40px -16px rgba(0,0,0,.6);
+    --shadow-lg:0 30px 60px -20px rgba(0,0,0,.7);
+    --blob-o:.35; --dot:rgba(255,255,255,.07);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#070b18; --text:#eef1ff; --muted:#9aa3c0; --line:rgba(255,255,255,.08);
+  --glass:rgba(20,26,50,.55); --glass-strong:rgba(22,28,54,.88); --glass-line:rgba(255,255,255,.08);
+  --input:rgba(255,255,255,.05); --hover:rgba(139,124,255,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.2),0 16px 40px -16px rgba(0,0,0,.6);
+  --shadow-lg:0 30px 60px -20px rgba(0,0,0,.7);
+  --blob-o:.35; --dot:rgba(255,255,255,.07);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+img{display:block;max-width:100%}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.hidden{display:none!important}
+
+/* ---------- animated background ---------- */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:var(--bg)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--blob-o);will-change:transform}
+.b1{width:60vmax;height:60vmax;background:radial-gradient(circle,#8b5cf6 0,transparent 62%);top:-28vmax;right:-18vmax;animation:drift1 30s ease-in-out infinite alternate}
+.b2{width:55vmax;height:55vmax;background:radial-gradient(circle,#06b6d4 0,transparent 62%);bottom:-30vmax;left:-18vmax;animation:drift2 36s ease-in-out infinite alternate}
+.b3{width:38vmax;height:38vmax;background:radial-gradient(circle,#ec4899 0,transparent 62%);top:35%;left:30%;opacity:calc(var(--blob-o)*.6);animation:drift3 42s ease-in-out infinite alternate}
+.dots{position:absolute;inset:0;background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 20%,transparent 80%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 20%,transparent 80%)}
+@keyframes drift1{to{transform:translate(-12vmax,10vmax) scale(1.1)}}
+@keyframes drift2{to{transform:translate(14vmax,-10vmax) scale(1.15)}}
+@keyframes drift3{to{transform:translate(-10vmax,-12vmax) scale(.9)}}
+
+/* ---------- primitives ---------- */
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--glass-line);box-shadow:var(--shadow);border-radius:var(--r)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:14px;font-weight:600;font-size:15px;transition:transform .15s,box-shadow .2s,background .2s,opacity .2s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 8px 22px -8px rgba(109,93,252,.75)}
+.btn-primary:hover{box-shadow:0 12px 28px -8px rgba(109,93,252,.9)}
+.btn-ghost{background:var(--input);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--hover)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--danger)}
+.btn-sm{height:36px;padding:0 14px;font-size:14px;border-radius:12px}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.icon-btn{width:42px;height:42px;border-radius:14px;display:inline-grid;place-items:center;transition:background .2s,color .2s}
+.icon-btn:hover{background:var(--hover);color:var(--brand)}
+
 .field{margin-bottom:14px}
-.field label{display:block;font-weight:700;font-size:13px;margin-bottom:4px}
-.field input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none}
-.field input:focus{border-color:#2563eb}
-.btn{width:100%;padding:12px;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer}
-.btn-primary{background:#2563eb;color:#fff}
-.btn-primary:hover{background:#3b82f6}
-.error{color:#ef4444;font-size:13px;min-height:20px;margin:6px 0}
-.success{color:#22c55e;font-size:13px;margin:6px 0}
-.link{color:#2563eb;font-weight:700;cursor:pointer}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;z-index:999}
-.hidden{display:none}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--muted)}
+.input{width:100%;height:48px;padding:0 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--input);outline:none;font-size:15px;transition:border .2s,box-shadow .2s}
+textarea.input{height:auto;min-height:110px;padding:14px 16px;resize:vertical;line-height:1.7}
+.input:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(109,93,252,.15)}
+.input[dir="ltr"]{text-align:left}
+.msg{font-size:13.5px;min-height:20px;margin:4px 0 10px}
+.msg.err{color:var(--danger)} .msg.ok{color:var(--ok)}
+
+.av{width:var(--s,40px);height:var(--s,40px);border-radius:50%;flex:none;object-fit:cover;display:inline-grid;place-items:center;color:#fff;font-weight:700;font-size:calc(var(--s,40px)*.42);font-family:"Readex Pro",sans-serif;box-shadow:0 0 0 2px var(--glass-strong)}
+.badge{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--grad);color:#fff;vertical-align:-3px;margin-inline-start:4px}
+.badge svg{width:11px;height:11px;stroke-width:3}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:600;background:var(--hover);color:var(--brand);white-space:nowrap}
+.muted{color:var(--muted)}
+.logo{font-family:"Readex Pro",sans-serif;font-weight:700;font-size:24px;display:inline-flex;align-items:center;gap:10px;letter-spacing:-.3px}
+.logo-mark{width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 20px -8px rgba(109,93,252,.8)}
+.logo-mark svg{width:22px;height:22px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.logo b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---------- auth ---------- */
+.auth{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:40px;max-width:1180px;margin:auto;padding:40px 24px}
+.hero h1{font-family:"Readex Pro",sans-serif;font-size:clamp(34px,4.6vw,56px);line-height:1.2;margin:26px 0 16px;letter-spacing:-1px}
+.hero h1 span{background:linear-gradient(90deg,#6d5dfc,#ec4899 50%,#06b6d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:18px;color:var(--muted);max-width:480px}
+.hero-art{position:relative;margin-top:36px;height:230px;max-width:520px}
+.hero-art svg{width:100%;height:100%}
+.float-chip{position:absolute;padding:10px 14px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;border-radius:16px;animation:bob 6s ease-in-out infinite}
+.float-chip i{font-style:normal;font-size:18px}
+@keyframes bob{50%{transform:translateY(-10px)}}
+.auth-card{padding:34px;max-width:440px;width:100%;justify-self:center;background:var(--glass-strong);box-shadow:var(--shadow-lg)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:4px;margin:22px 0 22px}
+.tabs button{height:40px;border-radius:11px;font-weight:600;color:var(--muted);transition:.2s}
+.tabs button.on{background:var(--glass-strong);color:var(--text);box-shadow:var(--shadow)}
+.link{color:var(--brand);font-weight:600;cursor:pointer}
+.pulse{animation:pulse 3s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
+.orbit{animation:spin 40s linear infinite;transform-origin:260px 115px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- shell ---------- */
+.topbar{position:sticky;top:0;z-index:40;border-radius:0;border-width:0 0 1px;display:none}
+.topbar-in{height:60px;padding:0 14px;display:flex;align-items:center;justify-content:space-between}
+.shell{display:grid;grid-template-columns:250px minmax(0,620px) 300px;gap:28px;max-width:1260px;margin:auto;padding:24px 24px 60px;align-items:start}
+#main{min-width:0}
+.side{position:sticky;top:24px;display:flex;flex-direction:column;gap:6px;height:calc(100vh - 48px)}
+.side .logo{padding:6px 10px 22px}
+.nav-a{display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:16px;font-weight:600;font-size:16px;color:var(--muted);transition:.2s;position:relative}
+.nav-a:hover{background:var(--hover);color:var(--text)}
+.nav-a.on{background:var(--glass-strong);color:var(--text);box-shadow:var(--shadow)}
+.nav-a.on svg{stroke:var(--brand)}
+.dot-badge{position:absolute;inset-inline-start:30px;top:9px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--pink);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 3px var(--bg)}
+.side .btn-primary{margin:14px 6px 0;height:50px;border-radius:16px}
+.side-me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:18px}
+.side-me .who{flex:1;min-width:0;line-height:1.3}
+.side-me .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-me .who small{color:var(--muted);direction:ltr;display:block;text-align:right}
+.aside{position:sticky;top:24px;display:flex;flex-direction:column;gap:18px}
+.panel{padding:18px}
+.panel h3{font-family:"Readex Pro",sans-serif;font-size:16px;margin-bottom:12px}
+.sug{display:flex;align-items:center;gap:10px;padding:8px 0}
+.sug .who{flex:1;min-width:0;line-height:1.35}
+.sug .who b{font-size:14.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug .who small{color:var(--muted);font-size:12.5px}
+.cat-list{display:flex;flex-wrap:wrap;gap:8px}
+.foot{font-size:12px;color:var(--muted);padding:0 6px}
+
+.bottom{position:fixed;bottom:0;left:0;right:0;z-index:40;border-radius:22px 22px 0 0;border-width:1px 0 0;display:none;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-in{height:64px;display:grid;grid-template-columns:repeat(5,1fr);align-items:center}
+.bottom a{display:grid;place-items:center;height:100%;color:var(--muted);position:relative}
+.bottom a.on{color:var(--brand)}
+.bottom .fab{width:50px;height:50px;border-radius:17px;background:var(--grad);color:#fff;display:grid;place-items:center;margin:auto;box-shadow:0 10px 24px -8px rgba(109,93,252,.9)}
+.bottom .dot-badge{inset-inline-start:auto;inset-inline-end:calc(50% - 22px);top:10px}
+
+/* ---------- feed ---------- */
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.page-head h2{font-family:"Readex Pro",sans-serif;font-size:24px;letter-spacing:-.3px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips a{height:36px;padding:0 14px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;white-space:nowrap;background:var(--glass);border:1px solid var(--glass-line);color:var(--muted);transition:.2s}
+.chips a:hover{color:var(--text)}
+.chips a.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 16px -6px rgba(109,93,252,.8)}
+.composer{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:18px;cursor:pointer;transition:transform .2s}
+.composer:hover{transform:translateY(-2px)}
+.composer .fake{flex:1;height:44px;border-radius:14px;background:var(--input);border:1px solid var(--line);display:flex;align-items:center;padding:0 16px;color:var(--muted);white-space:nowrap;overflow:hidden;min-width:0}
+.post{margin-bottom:18px;overflow:hidden;animation:rise .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.post-head{display:flex;align-items:center;gap:12px;padding:16px 18px 12px}
+.post-head .who{flex:1;min-width:0;line-height:1.35}
+.post-head .who a b{font-size:15.5px}
+.post-head .who small{color:var(--muted);font-size:13px;display:block}
+.post-body{padding:0 18px 12px;white-space:pre-wrap;word-wrap:break-word;font-size:15.5px}
+.post-img{position:relative;background:var(--line);cursor:pointer;user-select:none}
+.post-img img{width:100%;max-height:640px;object-fit:cover}
+.heart-pop{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.heart-pop svg{width:96px;height:96px;fill:#fff;stroke:none;filter:drop-shadow(0 8px 20px rgba(0,0,0,.35));animation:pop .8s ease forwards}
+@keyframes pop{0%{transform:scale(0);opacity:0}30%{transform:scale(1.15);opacity:1}60%{transform:scale(1)}100%{transform:scale(1.1);opacity:0}}
+.post-actions{display:flex;align-items:center;gap:4px;padding:8px 10px}
+.act{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:12px;font-weight:600;font-size:14px;color:var(--muted);transition:.2s}
+.act:hover{background:var(--hover);color:var(--text)}
+.act.liked{color:var(--pink)}
+.act.liked svg{fill:var(--pink);stroke:var(--pink);animation:beat .35s ease}
+@keyframes beat{50%{transform:scale(1.3)}}
+.act.end{margin-inline-start:auto}
+.comments{border-top:1px solid var(--line);padding:14px 18px}
+.cmt{display:flex;gap:10px;padding:8px 0}
+.cmt .bubble{background:var(--input);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:8px 14px;flex:1;min-width:0}
+.cmt .bubble b{font-size:13.5px}
+.cmt .bubble p{white-space:pre-wrap;word-wrap:break-word;font-size:14.5px}
+.cmt small{color:var(--muted);font-size:12px}
+.cmt-form{display:flex;gap:8px;margin-top:10px}
+.cmt-form .input{height:44px}
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .big{font-size:44px;margin-bottom:8px}
+.skel{height:300px;margin-bottom:18px;background:linear-gradient(90deg,var(--glass) 25%,var(--hover) 50%,var(--glass) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+.more{display:flex;justify-content:center;margin:10px 0 30px}
+
+/* ---------- create ---------- */
+.create{padding:22px}
+.drop{border:2px dashed var(--line);border-radius:18px;min-height:170px;display:grid;place-items:center;text-align:center;color:var(--muted);cursor:pointer;transition:.2s;overflow:hidden;position:relative;background:var(--input)}
+.drop:hover,.drop.over{border-color:var(--brand);color:var(--brand);background:var(--hover)}
+.drop img{width:100%;max-height:420px;object-fit:contain;background:#000}
+.drop .rm{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);color:#fff;border-radius:12px}
+.counter{font-size:12px;color:var(--muted);text-align:left;margin-top:-8px;margin-bottom:10px}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.pick button{height:36px;padding:0 14px;border-radius:999px;font-size:13.5px;font-weight:600;background:var(--input);border:1px solid var(--line);color:var(--muted)}
+.pick button.on{background:var(--grad);color:#fff;border-color:transparent}
+
+/* ---------- profile ---------- */
+.prof{overflow:hidden;margin-bottom:20px}
+.cover{height:170px;position:relative}
+.cover::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.35) 1px,transparent 1.3px);background-size:18px 18px;-webkit-mask-image:linear-gradient(transparent,#000);mask-image:linear-gradient(transparent,#000)}
+.prof-main{padding:0 22px 22px}
+.prof-top{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-52px;position:relative;z-index:1;gap:10px}
+.prof-top .av{box-shadow:0 0 0 5px var(--glass-strong),var(--shadow)}
+.prof h2{font-family:"Readex Pro",sans-serif;font-size:24px;margin-top:12px;letter-spacing:-.3px}
+.prof .handle{color:var(--muted);direction:ltr;text-align:right}
+.prof .bio{margin-top:10px;white-space:pre-wrap}
+.stats{display:flex;gap:26px;margin-top:16px}
+.stats div{line-height:1.3}
+.stats b{font-family:"Readex Pro",sans-serif;font-size:20px;display:block}
+.stats span{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tile{aspect-ratio:1;border-radius:14px;overflow:hidden;position:relative;background:var(--line);display:block}
+.tile img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.tile:hover img{transform:scale(1.06)}
+.tile.text{background:var(--grad);color:#fff;padding:12px;font-size:13px;line-height:1.55;display:flex;align-items:center;justify-content:center;text-align:center}
+.tile.text span{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.tile .ov{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;gap:16px;font-weight:700;opacity:0;transition:.2s}
+.tile:hover .ov{opacity:1}
+.tile .ov svg{width:18px;height:18px;fill:#fff;stroke:#fff}
+
+/* ---------- lists ---------- */
+.row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;transition:.2s}
+.row:hover{background:var(--hover)}
+.row .who{flex:1;min-width:0;line-height:1.4}
+.row .who small{color:var(--muted);font-size:13px}
+.list{padding:8px}
+.notif.unread{background:var(--hover)}
+.notif .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;position:absolute;bottom:-4px;left:-4px;box-shadow:0 0 0 3px var(--glass-strong)}
+.notif .ic svg{width:14px;height:14px;stroke-width:2.4}
+.search{position:relative;margin-bottom:16px}
+.search svg{position:absolute;top:13px;right:16px;color:var(--muted)}
+.search .input{padding-right:48px;height:50px;border-radius:16px}
+.covers{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+.covers button{height:46px;border-radius:12px;border:3px solid transparent;transition:.2s}
+.covers button.on{border-color:var(--text);transform:scale(1.05)}
+.av-edit{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,20px);opacity:0;z-index:100;padding:12px 20px;border-radius:16px;background:#141a2e;color:#fff;font-weight:600;font-size:14.5px;box-shadow:var(--shadow-lg);transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.spin{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite}
+.loading{min-height:100vh;display:grid;place-items:center}
+.loading .logo-mark{width:64px;height:64px;border-radius:20px;animation:pulse 1.6s ease-in-out infinite}
+.loading .logo-mark svg{width:34px;height:34px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-weight:600;margin-bottom:14px}
+.back:hover{color:var(--text)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){.shell{grid-template-columns:230px minmax(0,1fr)}.aside{display:none}}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr);padding:16px 12px 100px;gap:0}
+  .side{display:none}.topbar,.bottom{display:block}
+  .auth{grid-template-columns:1fr;padding:28px 16px;gap:10px}
+  .hero{text-align:center}.hero p{margin:auto}.hero-art{display:none}
+  .hero h1{margin:18px 0 8px}
+  .cover{height:130px}
+  .grid{gap:4px}.tile{border-radius:10px}
+  .toast{bottom:92px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-
-<div class="container">
-  <div class="logo">Lab<span>Gram</span></div>
-  <p class="sub">مجتمع المختبرات والمهنيين الصحيين</p>
-  
-  <div id="authForm">
-    <div class="field">
-      <label>اسم المستخدم</label>
-      <input id="username" placeholder="mam87">
-    </div>
-    <div class="field">
-      <label>الاسم الكامل</label>
-      <input id="display" placeholder="اسمك الكامل">
-    </div>
-    <div class="field">
-      <label>البريد الإلكتروني</label>
-      <input id="email" type="email" placeholder="example@email.com">
-    </div>
-    <div class="field">
-      <label>كلمة المرور</label>
-      <input id="pass" type="password" placeholder="6 أحرف على الأقل">
-    </div>
-    <div id="err" class="error"></div>
-    <div id="success" class="success"></div>
-    <button class="btn btn-primary" onclick="register()">إنشاء حساب</button>
-    <div style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">
-      لديك حساب؟ <span class="link" onclick="showLogin()">تسجيل الدخول</span>
-    </div>
-  </div>
-
-  <div id="loginForm" class="hidden">
-    <div class="field">
-      <label>البريد الإلكتروني</label>
-      <input id="loginEmail" type="email" placeholder="example@email.com">
-    </div>
-    <div class="field">
-      <label>كلمة المرور</label>
-      <input id="loginPass" type="password" placeholder="••••••••">
-    </div>
-    <div id="loginErr" class="error"></div>
-    <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
-    <div style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">
-      ليس لديك حساب؟ <span class="link" onclick="showRegister()">إنشاء حساب</span>
-    </div>
-  </div>
-</div>
-
-<div id="toast" class="toast hidden"></div>
+<div class="bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="dots"></div></div>
+<div id="root"><div class="loading"><div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/></svg></div></div></div>
+<div id="toast" class="toast"></div>
 
 <script>
-// ============================================================
-// SUPABASE - إعدادات
-// ============================================================
-
+/* =====================================================================
+   LabGram — Supabase
+   ===================================================================== */
 const SUPABASE_URL = 'https://ualumobbhukgmjbznhea.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Rq7Jp7tlZO5ugDORHcCebQ_NZJnVXrZ';
+const BUCKET = 'lg-media';
+const PAGE = 15;
 
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ============================================================
-// دوال مساعدة
-// ============================================================
+const CATS = [
+  {k:'General',ar:'عام',e:'🧪'},
+  {k:'Histopathology',ar:'علم الأنسجة',e:'🔬'},
+  {k:'Cytology',ar:'علم الخلايا',e:'🧫'},
+  {k:'Microbiology',ar:'الأحياء الدقيقة',e:'🦠'},
+  {k:'Hematology',ar:'أمراض الدم',e:'🩸'},
+  {k:'Clinical Chemistry',ar:'الكيمياء السريرية',e:'⚗️'},
+  {k:'Immunology',ar:'المناعة',e:'🛡️'},
+  {k:'Molecular',ar:'الأحياء الجزيئية',e:'🧬'},
+  {k:'Blood Bank',ar:'بنك الدم',e:'💉'},
+  {k:'Laboratory Quality',ar:'جودة المختبرات',e:'✅'},
+];
+const cat = k => CATS.find(c=>c.k===k) || CATS[0];
 
-function toast(msg){
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-  clearTimeout(window._toast);
-  window._toast = setTimeout(() => el.classList.add('hidden'), 3000);
+const COVERS = {
+  aurora:'linear-gradient(120deg,#6d5dfc,#a855f7 45%,#06b6d4)',
+  sunset:'linear-gradient(120deg,#f97316,#ec4899 55%,#8b5cf6)',
+  ocean:'linear-gradient(120deg,#0ea5e9,#06b6d4 50%,#10b981)',
+  night:'linear-gradient(120deg,#0f172a,#312e81 55%,#6d28d9)',
+  rose:'linear-gradient(120deg,#fb7185,#f472b6 50%,#facc15)',
+  forest:'linear-gradient(120deg,#065f46,#059669 50%,#84cc16)',
+};
+const AV_GRADS = [['#6d5dfc','#06b6d4'],['#ec4899','#8b5cf6'],['#f97316','#ec4899'],['#10b981','#0ea5e9'],['#8b5cf6','#06b6d4'],['#f43f5e','#f59e0b'],['#0ea5e9','#6366f1']];
+
+/* ---------- icons ---------- */
+const P = {
+  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.6"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  bell:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  heart:'<path d="M12 20.5s-7.6-4.6-9.6-9.3C1 7.8 3.2 4 7 4c2.2 0 3.6 1.2 5 3 1.4-1.8 2.8-3 5-3 3.8 0 6 3.8 4.6 7.2-2 4.7-9.6 9.3-9.6 9.3z"/>',
+  chat:'<path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"/>',
+  share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4M12 2v13"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  back:'<path d="M5 12h14M13 5l7 7-7 7"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  flask:'<path d="M9 3h6M10 3v6L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
+};
+const ic = (n,cls='') => `<svg class="i ${cls}" viewBox="0 0 24 24">${P[n]}</svg>`;
+const LOGO = `<span class="logo"><span class="logo-mark"><svg viewBox="0 0 24 24">${P.flask}</svg></span><span>Lab<b>Gram</b></span></span>`;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const root = () => $('#root');
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
+function hashOf(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)}
+function avGrad(id){const g=AV_GRADS[hashOf(id)%AV_GRADS.length];return `linear-gradient(135deg,${g[0]},${g[1]})`}
+function nameOf(p){return (p?.display_name||'').trim()||p?.username||'مستخدم'}
+function avatar(p,s=42){
+  if(p?.avatar_url) return `<img class="av" style="--s:${s}px" src="${esc(p.avatar_url)}" alt="" loading="lazy">`;
+  return `<span class="av" style="--s:${s}px;background:${avGrad(p?.id||p?.username||'')}">${esc(nameOf(p).charAt(0).toUpperCase())}</span>`;
+}
+const badge = p => p?.role==='owner' ? `<span class="badge" title="مالك المنصة">${ic('check')}</span>` : '';
+const rtf = new Intl.RelativeTimeFormat('ar',{numeric:'auto',style:'short'});
+function ago(iso){
+  const s=(new Date(iso)-Date.now())/1000, a=Math.abs(s);
+  if(a<45) return 'الآن';
+  if(a<3600) return rtf.format(Math.round(s/60),'minute');
+  if(a<86400) return rtf.format(Math.round(s/3600),'hour');
+  if(a<604800) return rtf.format(Math.round(s/86400),'day');
+  return new Date(iso).toLocaleDateString('ar',{day:'numeric',month:'long',year:'numeric'});
+}
+const fmt = n => new Intl.NumberFormat('ar').format(n||0);
+const USER_RE = /^[A-Za-z0-9_.]{3,30}$/;
+
+function isSetupError(e){
+  const m=(e?.message||'')+' '+(e?.code||'');
+  return /42P01|PGRST205|PGRST200|does not exist|Could not find the table|schema cache/i.test(m);
+}
+function fail(e,fallback='حدث خطأ، حاول مرة أخرى'){
+  console.error(e);
+  if(isSetupError(e)){ renderSetup(e); return; }
+  toast(fallback);
 }
 
-function showLogin(){
-  document.getElementById('authForm').classList.add('hidden');
-  document.getElementById('loginForm').classList.remove('hidden');
+/* ---------- theme ---------- */
+function theme(){return document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}
+function toggleTheme(){
+  const t = theme()==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=t;
+  try{localStorage.setItem('lg-theme',t)}catch(e){}
+  route();
 }
+try{const t=localStorage.getItem('lg-theme'); if(t) document.documentElement.dataset.theme=t}catch(e){}
 
-function showRegister(){
-  document.getElementById('authForm').classList.remove('hidden');
-  document.getElementById('loginForm').classList.add('hidden');
-}
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const S = { user:null, me:null, followIds:new Set(), unread:0, posts:new Map(), recovery:false };
 
-// ============================================================
-// دالة التسجيل - جديدة ومبسطة
-// ============================================================
-
-async function register(){
-  const username = document.getElementById('username').value.trim();
-  const display = document.getElementById('display').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const pass = document.getElementById('pass').value;
-  const err = document.getElementById('err');
-  const success = document.getElementById('success');
-  
-  err.textContent = '';
-  success.textContent = '';
-  
-  // تحقق من البيانات
-  if(username.length < 3){
-    err.textContent = 'اسم المستخدم 3 أحرف على الأقل';
-    return;
-  }
-  if(!display){
-    err.textContent = 'أدخل اسمك الكامل';
-    return;
-  }
-  if(!email){
-    err.textContent = 'أدخل البريد الإلكتروني';
-    return;
-  }
-  if(pass.length < 6){
-    err.textContent = 'كلمة المرور 6 أحرف على الأقل';
-    return;
-  }
-  
-  try {
-    toast('جاري إنشاء الحساب...');
-    
-    // 1. إنشاء الحساب
-    const { data, error } = await sb.auth.signUp({
-      email: email,
-      password: pass,
-      options: {
-        data: {
-          username: username,
-          display_name: display,
-          specialty: 'General',
-          bio: ''
-        }
-      }
-    });
-    
-    if(error){
-      err.textContent = 'خطأ: ' + error.message;
-      toast('فشل إنشاء الحساب ❌');
-      return;
+async function loadMe(){
+  S.me=null; S.followIds=new Set();
+  if(!S.user) return;
+  const {data,error} = await sb.from('lg_profiles').select('*').eq('id',S.user.id).maybeSingle();
+  if(error) throw error;
+  if(!data){
+    // محاولة إنشاء الملف من بيانات التسجيل
+    const m=S.user.user_metadata||{};
+    if(m.username && USER_RE.test(m.username)){
+      const ins = await sb.from('lg_profiles').insert({id:S.user.id,username:m.username,display_name:m.display_name||'',specialty:m.specialty||'General',bio:m.bio||''}).select().maybeSingle();
+      if(!ins.error) S.me=ins.data;
     }
-    
-    success.textContent = '✅ تم إنشاء الحساب بنجاح!';
-    toast('تم إنشاء الحساب! 🎉');
-    
-    // 2. محاولة تسجيل الدخول تلقائياً
-    setTimeout(async () => {
-      const { error: loginError } = await sb.auth.signInWithPassword({
-        email: email,
-        password: pass
-      });
-      
-      if(loginError){
-        err.textContent = 'تم إنشاء الحساب! جرب تسجيل الدخول الآن';
-        showLogin();
-        document.getElementById('loginEmail').value = email;
-        document.getElementById('loginPass').value = pass;
-        return;
-      }
-      
-      toast('تم تسجيل الدخول! 🎉');
-      window.location.href = 'feed.html'; // روح للصفحة الرئيسية
-      
-    }, 2000);
-    
-  } catch(e){
-    err.textContent = 'خطأ غير متوقع: ' + e.message;
-    toast('حدث خطأ ❌');
+  } else S.me=data;
+  if(S.me){
+    const f = await sb.from('lg_follows').select('following_id').eq('follower_id',S.me.id);
+    if(!f.error) S.followIds=new Set(f.data.map(x=>x.following_id));
+    refreshUnread();
+  }
+}
+async function refreshUnread(){
+  if(!S.me) return;
+  const {count} = await sb.from('lg_notifications').select('id',{count:'exact',head:true}).eq('user_id',S.me.id).eq('read',false);
+  S.unread=count||0;
+  document.querySelectorAll('[data-unread]').forEach(el=>{el.textContent=S.unread>9?'9+':S.unread;el.classList.toggle('hidden',!S.unread)});
+}
+
+/* =====================================================================
+   ROUTER
+   ===================================================================== */
+function parseHash(){
+  const h=decodeURIComponent(location.hash.replace(/^#\/?/,''));
+  const [a='',b='']=h.split('/');
+  return {a,b};
+}
+let routeToken=0;
+async function route(){
+  const tok=++routeToken;
+  if(S.recovery) return renderRecovery();
+  if(!S.user) return renderAuth();
+  if(!S.me) return renderCompleteProfile();
+  const {a,b}=parseHash();
+  window.scrollTo({top:0});
+  const views={
+    '':()=>renderFeed('all',b), c:()=>renderFeed('all',b), following:()=>renderFeed('following'),
+    explore:()=>renderExplore(b), new:renderCreate, notifications:renderNotifications,
+    u:()=>renderProfile(b), p:()=>renderPost(b), settings:renderSettings,
+  };
+  (views[a]||views[''])(tok);
+}
+const stale = tok => tok!==routeToken;
+
+/* ---------- app shell ---------- */
+function shell(active, inner, {aside=true}={}){
+  const me=S.me, u=S.unread;
+  const nav=(href,key,icon,label,extra='')=>`<a class="nav-a ${active===key?'on':''}" href="${href}">${ic(icon)}<span>${label}</span>${extra}</a>`;
+  const ub=`<span class="dot-badge ${u?'':'hidden'}" data-unread>${u>9?'9+':u}</span>`;
+  root().innerHTML=`
+  <header class="topbar glass"><div class="topbar-in">
+    <a href="#/">${LOGO}</a>
+    <div style="display:flex;gap:4px">
+      <button class="icon-btn" onclick="toggleTheme()" aria-label="الوضع">${ic(theme()==='dark'?'sun':'moon')}</button>
+      <a class="icon-btn" href="#/settings" aria-label="الإعدادات">${ic('gear')}</a>
+    </div>
+  </div></header>
+
+  <div class="shell">
+    <nav class="side">
+      <a href="#/">${LOGO}</a>
+      ${nav('#/','feed','home','الرئيسية')}
+      ${nav('#/following','following','users','أتابعهم')}
+      ${nav('#/explore','explore','compass','استكشاف')}
+      ${nav('#/notifications','notifications','bell','التنبيهات',ub)}
+      ${nav('#/u/'+encodeURIComponent(me.username),'me','user','حسابي')}
+      ${nav('#/settings','settings','gear','الإعدادات')}
+      <a class="btn btn-primary" href="#/new">${ic('plus')} منشور جديد</a>
+      <div class="side-me glass">
+        <a href="#/u/${encodeURIComponent(me.username)}">${avatar(me,40)}</a>
+        <div class="who"><b>${esc(nameOf(me))}${badge(me)}</b><small>@${esc(me.username)}</small></div>
+        <button class="icon-btn" onclick="toggleTheme()" title="الوضع الليلي/النهاري">${ic(theme()==='dark'?'sun':'moon')}</button>
+        <button class="icon-btn" onclick="logout()" title="تسجيل الخروج">${ic('out')}</button>
+      </div>
+    </nav>
+
+    <main id="main">${inner}</main>
+
+    <aside class="aside">
+      <div class="panel glass" id="sugPanel"><h3>مقترحون للمتابعة</h3><div id="sug"><div class="muted" style="font-size:14px">جارٍ التحميل…</div></div></div>
+      <div class="panel glass"><h3>الأقسام</h3><div class="cat-list">${CATS.map(c=>`<a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>`).join('')}</div></div>
+      <div class="foot">LabGram · مجتمع أخصائيي المختبرات والمهنيين الصحيين © ${new Date().getFullYear()}</div>
+    </aside>
+  </div>
+
+  <nav class="bottom glass"><div class="bottom-in">
+    <a href="#/" class="${active==='feed'||active==='following'?'on':''}">${ic('home')}</a>
+    <a href="#/explore" class="${active==='explore'?'on':''}">${ic('compass')}</a>
+    <a href="#/new"><span class="fab">${ic('plus')}</span></a>
+    <a href="#/notifications" class="${active==='notifications'?'on':''}">${ic('bell')}${ub}</a>
+    <a href="#/u/${encodeURIComponent(me.username)}" class="${active==='me'?'on':''}">${avatar(me,28)}</a>
+  </div></nav>`;
+  if(aside) loadSuggestions();
+}
+const main = () => $('#main');
+
+async function loadSuggestions(){
+  const box=$('#sug'); if(!box || getComputedStyle($('.aside')).display==='none') return;
+  const {data,error}=await sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,role').neq('id',S.me.id).order('created_at',{ascending:false}).limit(30);
+  if(error||!$('#sug')) return;
+  const list=data.filter(p=>!S.followIds.has(p.id)).slice(0,5);
+  $('#sug').innerHTML = list.length ? list.map(p=>`
+    <div class="sug">
+      <a href="#/u/${encodeURIComponent(p.username)}">${avatar(p,40)}</a>
+      <div class="who"><a href="#/u/${encodeURIComponent(p.username)}"><b>${esc(nameOf(p))}${badge(p)}</b></a><small>${cat(p.specialty).ar}</small></div>
+      <button class="btn btn-ghost btn-sm" onclick="follow('${p.id}',this)">متابعة</button>
+    </div>`).join('') : `<div class="muted" style="font-size:14px">تابعت الجميع 🎉</div>`;
+}
+
+/* =====================================================================
+   AUTH
+   ===================================================================== */
+function renderAuth(mode='login'){
+  root().innerHTML=`
+  <div class="auth">
+    <section class="hero">
+      ${LOGO}
+      <h1>مجتمع <span>المختبرات</span><br>في مكان واحد</h1>
+      <p>شارك الحالات التعليمية، الصور المجهرية وخبراتك في الجودة والاعتماد مع أخصائيي المختبرات حول العالم.</p>
+      <div class="hero-art">
+        <svg viewBox="0 0 520 230" aria-hidden="true">
+          <defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d5dfc"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
+          <radialGradient id="cell" cx=".4" cy=".35"><stop offset="0" stop-color="#f9a8d4"/><stop offset="1" stop-color="#a855f7"/></radialGradient></defs>
+          <g class="orbit" opacity=".9">
+            <circle cx="260" cy="115" r="96" fill="none" stroke="url(#hg)" stroke-width="1.5" stroke-dasharray="4 8" opacity=".6"/>
+            <circle cx="356" cy="115" r="9" fill="url(#hg)"/><circle cx="164" cy="115" r="6" fill="#ec4899"/><circle cx="260" cy="19" r="5" fill="#06b6d4"/>
+          </g>
+          <circle cx="260" cy="115" r="58" fill="url(#cell)" opacity=".25" class="pulse"/>
+          <circle cx="260" cy="115" r="40" fill="url(#cell)" opacity=".85"/>
+          <circle cx="250" cy="105" r="15" fill="#6d28d9" opacity=".85"/>
+          <circle cx="276" cy="128" r="4" fill="#fff" opacity=".7"/><circle cx="240" cy="132" r="3" fill="#fff" opacity=".6"/>
+          <g stroke="url(#hg)" stroke-width="2" opacity=".5"><line x1="60" y1="60" x2="120" y2="40"/><line x1="120" y1="40" x2="150" y2="90"/><line x1="400" y1="170" x2="460" y2="140"/><line x1="460" y1="140" x2="480" y2="190"/></g>
+          <g fill="url(#hg)"><circle cx="60" cy="60" r="7"/><circle cx="120" cy="40" r="5"/><circle cx="150" cy="90" r="8"/><circle cx="400" cy="170" r="6"/><circle cx="460" cy="140" r="8"/><circle cx="480" cy="190" r="5"/></g>
+        </svg>
+        <div class="float-chip glass" style="top:6px;left:10px"><i>🔬</i> علم الأنسجة</div>
+        <div class="float-chip glass" style="bottom:4px;right:20px;animation-delay:-2s"><i>🧬</i> الأحياء الجزيئية</div>
+        <div class="float-chip glass" style="bottom:40px;left:0;animation-delay:-4s"><i>✅</i> ISO 15189</div>
+      </div>
+    </section>
+
+    <section class="auth-card glass">
+      <h2 style="font-family:'Readex Pro';font-size:24px">${mode==='login'?'أهلاً بعودتك 👋':mode==='register'?'انضم إلى LabGram':'استعادة كلمة المرور'}</h2>
+      <p class="muted" style="font-size:14.5px">${mode==='forgot'?'سنرسل لك رابطاً لإعادة تعيين كلمة المرور.':'مجتمع المختبرات والمهنيين الصحيين'}</p>
+      ${mode!=='forgot'?`<div class="tabs"><button class="${mode==='login'?'on':''}" onclick="renderAuth('login')">تسجيل الدخول</button><button class="${mode==='register'?'on':''}" onclick="renderAuth('register')">حساب جديد</button></div>`:'<div style="height:20px"></div>'}
+      <form id="authForm" onsubmit="return false">
+        ${mode==='register'?`
+          <div class="field"><label>اسم المستخدم</label><input class="input" id="fUser" dir="ltr" placeholder="lab_expert" autocomplete="username" maxlength="30"></div>
+          <div class="field"><label>الاسم الكامل</label><input class="input" id="fName" placeholder="اسمك كما سيظهر للآخرين" maxlength="60"></div>
+          <div class="field"><label>التخصص</label><select class="input" id="fSpec">${CATS.map(c=>`<option value="${c.k}">${c.e} ${c.ar}</option>`).join('')}</select></div>`:''}
+        <div class="field"><label>البريد الإلكتروني</label><input class="input" id="fEmail" type="email" dir="ltr" placeholder="you@example.com" autocomplete="email"></div>
+        ${mode!=='forgot'?`<div class="field"><label>كلمة المرور</label><input class="input" id="fPass" type="password" dir="ltr" placeholder="${mode==='register'?'6 أحرف على الأقل':'••••••••'}" autocomplete="${mode==='register'?'new-password':'current-password'}"></div>`:''}
+        <div class="msg" id="fMsg"></div>
+        <button class="btn btn-primary btn-block" id="fBtn" onclick="${mode==='login'?'doLogin()':mode==='register'?'doRegister()':'doForgot()'}">${mode==='login'?'دخول':mode==='register'?'إنشاء الحساب':'إرسال الرابط'}</button>
+      </form>
+      <p style="text-align:center;margin-top:18px;font-size:14px" class="muted">
+        ${mode==='login'?`نسيت كلمة المرور؟ <span class="link" onclick="renderAuth('forgot')">استعادتها</span>`:mode==='forgot'?`<span class="link" onclick="renderAuth('login')">العودة لتسجيل الدخول</span>`:'بالتسجيل أنت توافق على احترام خصوصية المرضى وعدم نشر بيانات تعريفية.'}
+      </p>
+    </section>
+  </div>`;
+}
+function setMsg(t,ok=false){const m=$('#fMsg');if(m){m.textContent=t;m.className='msg '+(ok?'ok':'err')}}
+function busy(on,label){const b=$('#fBtn');if(!b)return;b.disabled=on;if(on){b.dataset.l=b.innerHTML;b.innerHTML='<span class="spin"></span>'}else if(b.dataset.l)b.innerHTML=label||b.dataset.l}
+function authErr(e){
+  const m=e?.message||'';
+  if(/Invalid login/i.test(m)) return 'البريد أو كلمة المرور غير صحيحة';
+  if(/not confirmed/i.test(m)) return 'لم يتم تفعيل البريد بعد — افتح رسالة التفعيل في بريدك';
+  if(/already registered|already been registered/i.test(m)) return 'هذا البريد مسجّل مسبقاً، جرّب تسجيل الدخول';
+  if(/rate limit|security purposes/i.test(m)) return 'محاولات كثيرة، انتظر قليلاً ثم حاول مجدداً';
+  if(/Password should/i.test(m)) return 'كلمة المرور ضعيفة — 6 أحرف على الأقل';
+  return 'خطأ: '+m;
+}
+async function doLogin(){
+  const email=$('#fEmail').value.trim(), pass=$('#fPass').value;
+  if(!email||!pass) return setMsg('أدخل البريد وكلمة المرور');
+  busy(true);
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  busy(false);
+  if(error) return setMsg(authErr(error));
+}
+async function doRegister(){
+  const username=$('#fUser').value.trim(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
+  const email=$('#fEmail').value.trim(), pass=$('#fPass').value;
+  if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
+  if(!display) return setMsg('أدخل اسمك الكامل');
+  if(!email) return setMsg('أدخل البريد الإلكتروني');
+  if(pass.length<6) return setMsg('كلمة المرور 6 أحرف على الأقل');
+  busy(true);
+  const chk=await sb.from('lg_profiles').select('id').eq('username',username).maybeSingle();
+  if(chk.error && isSetupError(chk.error)){busy(false);return renderSetup(chk.error)}
+  if(chk.data){busy(false);return setMsg('اسم المستخدم محجوز، اختر اسماً آخر')}
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{
+    data:{username,display_name:display,specialty,bio:''},
+    emailRedirectTo:location.origin+location.pathname
+  }});
+  busy(false);
+  if(error) return setMsg(authErr(error));
+  if(!data.session){
+    setMsg('✅ تم إنشاء الحساب! أرسلنا رابط تفعيل إلى بريدك — افتحه ثم سجّل الدخول.',true);
+    $('#fBtn').disabled=true;
+  }
+}
+async function doForgot(){
+  const email=$('#fEmail').value.trim();
+  if(!email) return setMsg('أدخل البريد الإلكتروني');
+  busy(true);
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  busy(false);
+  if(error) return setMsg(authErr(error));
+  setMsg('✅ إن كان البريد مسجلاً فستصلك رسالة خلال دقائق.',true);
+}
+function renderRecovery(){
+  root().innerHTML=`<div class="auth" style="grid-template-columns:1fr"><section class="auth-card glass">
+    ${LOGO}<h2 style="font-family:'Readex Pro';font-size:22px;margin-top:18px">كلمة مرور جديدة</h2>
+    <div style="height:16px"></div>
+    <div class="field"><label>كلمة المرور الجديدة</label><input class="input" id="fPass" type="password" dir="ltr" autocomplete="new-password"></div>
+    <div class="msg" id="fMsg"></div>
+    <button class="btn btn-primary btn-block" id="fBtn" onclick="doNewPass()">حفظ</button>
+  </section></div>`;
+}
+async function doNewPass(){
+  const p=$('#fPass').value; if(p.length<6) return setMsg('6 أحرف على الأقل');
+  busy(true); const {error}=await sb.auth.updateUser({password:p}); busy(false);
+  if(error) return setMsg(authErr(error));
+  S.recovery=false; toast('تم تحديث كلمة المرور ✅'); location.hash='#/'; route();
+}
+function renderCompleteProfile(){
+  const m=S.user?.user_metadata||{};
+  root().innerHTML=`<div class="auth" style="grid-template-columns:1fr"><section class="auth-card glass">
+    ${LOGO}<h2 style="font-family:'Readex Pro';font-size:22px;margin-top:18px">أكمل ملفك الشخصي</h2>
+    <p class="muted" style="font-size:14px;margin-bottom:18px">اختر اسم مستخدم ليتعرف عليك الآخرون.</p>
+    <div class="field"><label>اسم المستخدم</label><input class="input" id="fUser" dir="ltr" value="${esc(m.username||'')}" maxlength="30"></div>
+    <div class="field"><label>الاسم الكامل</label><input class="input" id="fName" value="${esc(m.display_name||'')}" maxlength="60"></div>
+    <div class="field"><label>التخصص</label><select class="input" id="fSpec">${CATS.map(c=>`<option value="${c.k}">${c.e} ${c.ar}</option>`).join('')}</select></div>
+    <div class="msg" id="fMsg"></div>
+    <button class="btn btn-primary btn-block" id="fBtn" onclick="doComplete()">متابعة</button>
+    <p style="text-align:center;margin-top:14px"><span class="link" onclick="logout()">تسجيل الخروج</span></p>
+  </section></div>`;
+}
+async function doComplete(){
+  const username=$('#fUser').value.trim(), display=$('#fName').value.trim(), specialty=$('#fSpec').value;
+  if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
+  busy(true);
+  const {data,error}=await sb.from('lg_profiles').insert({id:S.user.id,username,display_name:display,specialty}).select().single();
+  busy(false);
+  if(error){ if(isSetupError(error)) return renderSetup(error); return setMsg(error.code==='23505'?'اسم المستخدم محجوز':'خطأ: '+error.message) }
+  S.me=data; route();
+}
+async function logout(){ await sb.auth.signOut(); location.hash='#/'; }
+
+function renderSetup(e){
+  root().innerHTML=`<div class="auth" style="grid-template-columns:1fr"><section class="auth-card glass" style="max-width:560px">
+    ${LOGO}
+    <h2 style="font-family:'Readex Pro';font-size:22px;margin:18px 0 8px">قاعدة البيانات تحتاج إلى تجهيز ⚙️</h2>
+    <p class="muted" style="font-size:15px">الجداول الخاصة بـ LabGram غير موجودة بعد في مشروع Supabase.</p>
+    <ol style="margin:16px 22px 18px;font-size:15px;line-height:2">
+      <li>افتح لوحة Supabase لمشروعك ← <b>SQL Editor</b> ← <b>New query</b></li>
+      <li>انسخ محتوى الملف <b dir="ltr">schema.sql</b> من المستودع والصقه</li>
+      <li>اضغط <b>Run</b> ثم حدّث هذه الصفحة</li>
+    </ol>
+    <a class="btn btn-primary btn-block" href="https://github.com/mam87/LabGram2/blob/main/schema.sql" target="_blank" rel="noopener">فتح schema.sql</a>
+    <p class="muted" style="font-size:12px;margin-top:12px;direction:ltr;text-align:left">${esc(e?.message||'')}</p>
+  </section></div>`;
+}
+
+/* =====================================================================
+   POSTS
+   ===================================================================== */
+const POST_SEL='id,body,image_url,category,created_at,user_id,author:lg_profiles!lg_posts_user_id_fkey(id,username,display_name,avatar_url,specialty,role),lg_likes(user_id),lg_comments(count)';
+function norm(p){
+  p.likeSet=new Set((p.lg_likes||[]).map(l=>l.user_id));
+  p.cCount=p.lg_comments?.[0]?.count||0;
+  S.posts.set(p.id,p); return p;
+}
+function canDelete(p){return p.user_id===S.me.id || S.me.role==='owner'}
+
+function postCard(p,i=0){
+  const a=p.author||{}, liked=p.likeSet.has(S.me.id), c=cat(p.category);
+  const href='#/u/'+encodeURIComponent(a.username||'');
+  return `
+  <article class="post glass" id="post-${p.id}" style="animation-delay:${Math.min(i,6)*50}ms">
+    <div class="post-head">
+      <a href="${href}">${avatar(a,44)}</a>
+      <div class="who"><a href="${href}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><small><span dir="ltr">@${esc(a.username)}</span> · ${ago(p.created_at)}</small></div>
+      <a class="chip" href="#/c/${encodeURIComponent(c.k)}">${c.e} ${c.ar}</a>
+    </div>
+    ${p.body?`<div class="post-body">${esc(p.body)}</div>`:''}
+    ${p.image_url?`<div class="post-img" ondblclick="dblLike('${p.id}',this)"><img src="${esc(p.image_url)}" alt="" loading="lazy"></div>`:''}
+    <div class="post-actions">
+      <button class="act ${liked?'liked':''}" id="like-${p.id}" onclick="toggleLike('${p.id}')">${ic('heart')}<span>${fmt(p.likeSet.size)}</span></button>
+      <a class="act" href="#/p/${p.id}">${ic('chat')}<span>${fmt(p.cCount)}</span></a>
+      <button class="act" onclick="sharePost('${p.id}')">${ic('share')}</button>
+      ${canDelete(p)?`<button class="act end" onclick="deletePost('${p.id}')" title="حذف">${ic('trash')}</button>`:''}
+    </div>
+  </article>`;
+}
+
+async function toggleLike(id){
+  const p=S.posts.get(id); if(!p) return;
+  const had=p.likeSet.has(S.me.id);
+  had?p.likeSet.delete(S.me.id):p.likeSet.add(S.me.id);
+  paintLike(p);
+  const q = had ? sb.from('lg_likes').delete().eq('post_id',id).eq('user_id',S.me.id)
+                : sb.from('lg_likes').insert({post_id:id,user_id:S.me.id});
+  const {error}=await q;
+  if(error && error.code!=='23505'){ had?p.likeSet.add(S.me.id):p.likeSet.delete(S.me.id); paintLike(p); fail(error,'تعذّر تسجيل الإعجاب'); }
+}
+function paintLike(p){
+  const b=document.getElementById('like-'+p.id); if(!b) return;
+  b.classList.toggle('liked',p.likeSet.has(S.me.id));
+  b.querySelector('span').textContent=fmt(p.likeSet.size);
+}
+function dblLike(id,el){
+  const pop=document.createElement('div'); pop.className='heart-pop'; pop.innerHTML=`<svg viewBox="0 0 24 24">${P.heart}</svg>`;
+  el.appendChild(pop); setTimeout(()=>pop.remove(),850);
+  const p=S.posts.get(id); if(p && !p.likeSet.has(S.me.id)) toggleLike(id);
+}
+async function sharePost(id){
+  const url=location.origin+location.pathname+'#/p/'+id;
+  try{ if(navigator.share) await navigator.share({title:'LabGram',url}); else {await navigator.clipboard.writeText(url); toast('تم نسخ الرابط 🔗')} }catch(e){}
+}
+async function deletePost(id){
+  if(!confirm('حذف هذا المنشور نهائياً؟')) return;
+  const p=S.posts.get(id);
+  const {error}=await sb.from('lg_posts').delete().eq('id',id);
+  if(error) return fail(error,'تعذّر الحذف');
+  if(p?.image_url){
+    const path=p.image_url.split('/'+BUCKET+'/')[1];
+    if(path && path.startsWith(S.me.id)) sb.storage.from(BUCKET).remove([decodeURIComponent(path)]);
+  }
+  S.posts.delete(id);
+  const el=document.getElementById('post-'+id);
+  if(parseHash().a==='p') location.hash='#/'; else if(el){el.style.transition='.3s';el.style.opacity=0;el.style.transform='scale(.97)';setTimeout(()=>el.remove(),300)}
+  toast('تم حذف المنشور');
+}
+
+/* ---------- feed ---------- */
+let feedState={};
+async function renderFeed(mode,catKey,tok){
+  if(typeof catKey==='number'){tok=catKey;catKey=''}
+  tok = tok ?? routeToken;
+  const active = mode==='following'?'following':'feed';
+  const chips=`<div class="chips"><a href="#/" class="${!catKey&&mode==='all'?'on':''}">الكل</a><a href="#/following" class="${mode==='following'?'on':''}">👥 أتابعهم</a>${CATS.map(c=>`<a href="#/c/${encodeURIComponent(c.k)}" class="${catKey===c.k?'on':''}">${c.e} ${c.ar}</a>`).join('')}</div>`;
+  shell(active,`
+    <div class="page-head"><h2>${mode==='following'?'من تتابعهم':catKey?cat(catKey).e+' '+cat(catKey).ar:'الرئيسية'}</h2></div>
+    ${chips}
+    <a class="composer glass" href="#/new">${avatar(S.me,42)}<div class="fake">شارك حالة، صورة مجهرية أو معلومة…</div><span class="icon-btn" style="color:var(--brand)">${ic('image')}</span></a>
+    <div id="feed"><div class="skel glass"></div><div class="skel glass"></div></div>
+    <div class="more" id="more"></div>`);
+  feedState={mode,catKey,offset:0,done:false,tok};
+  await loadFeed();
+}
+async function loadFeed(){
+  const st=feedState, box=$('#feed'); if(!box) return;
+  let q=sb.from('lg_posts').select(POST_SEL).order('created_at',{ascending:false}).range(st.offset,st.offset+PAGE-1);
+  if(st.catKey) q=q.eq('category',st.catKey);
+  if(st.mode==='following'){
+    const ids=[...S.followIds, S.me.id];
+    q=q.in('user_id',ids);
+  }
+  const {data,error}=await q;
+  if(stale(st.tok)) return;
+  if(error) return fail(error,'تعذّر تحميل المنشورات');
+  if(st.offset===0) box.innerHTML='';
+  const posts=data.map(norm);
+  if(!posts.length && st.offset===0){
+    box.innerHTML = st.mode==='following' && S.followIds.size===0
+      ? `<div class="empty glass"><div class="big">👥</div><b>لا تتابع أحداً بعد</b><p>اكتشف زملاءك وابدأ بمتابعتهم.</p><a class="btn btn-primary" style="margin-top:14px" href="#/explore">استكشاف</a></div>`
+      : `<div class="empty glass"><div class="big">🧪</div><b>لا توجد منشورات بعد</b><p>كن أول من يشارك في هذا القسم.</p><a class="btn btn-primary" style="margin-top:14px" href="#/new">انشر الآن</a></div>`;
+  } else box.insertAdjacentHTML('beforeend',posts.map(postCard).join(''));
+  st.offset+=posts.length; st.done=posts.length<PAGE;
+  $('#more').innerHTML = st.done ? (st.offset>0?'<span class="muted" style="font-size:13px">وصلت إلى النهاية ✨</span>':'') : `<button class="btn btn-ghost" onclick="this.disabled=true;loadFeed()">عرض المزيد</button>`;
+}
+
+/* ---------- single post ---------- */
+async function renderPost(id,tok){
+  tok=tok??routeToken;
+  shell('feed',`<a class="back" href="javascript:history.back()">${ic('back')} رجوع</a><div id="pv"><div class="skel glass"></div></div>`);
+  const [pr,cr]=await Promise.all([
+    sb.from('lg_posts').select(POST_SEL).eq('id',id).maybeSingle(),
+    sb.from('lg_comments').select('id,body,created_at,user_id,author:lg_profiles!lg_comments_user_id_fkey(id,username,display_name,avatar_url,role)').eq('post_id',id).order('created_at'),
+  ]);
+  if(stale(tok)) return;
+  if(pr.error) return fail(pr.error);
+  if(!pr.data){ $('#pv').innerHTML=`<div class="empty glass"><div class="big">🔍</div><b>المنشور غير موجود</b><p>ربما تم حذفه.</p></div>`; return }
+  const p=norm(pr.data); const post=p;
+  $('#pv').innerHTML=postCard(p);
+  const card=$('#post-'+p.id);
+  card.insertAdjacentHTML('beforeend',`<div class="comments"><div id="clist">${(cr.data||[]).map(c=>cmtHTML(c,post)).join('') || '<p class="muted" id="noc" style="font-size:14px;padding:6px 0">لا توجد تعليقات بعد — كن أول من يعلّق.</p>'}</div>
+    <form class="cmt-form" onsubmit="addComment(event,'${p.id}')">${avatar(S.me,40)}<input class="input" id="cIn" placeholder="أضف تعليقاً…" maxlength="1000" autocomplete="off"><button class="btn btn-primary" id="cBtn">نشر</button></form></div>`);
+}
+function cmtHTML(c,post){
+  const a=c.author||{}, can=c.user_id===S.me.id||S.me.role==='owner'||post?.user_id===S.me.id;
+  return `<div class="cmt" id="c-${c.id}"><a href="#/u/${encodeURIComponent(a.username||'')}">${avatar(a,34)}</a>
+    <div style="flex:1;min-width:0"><div class="bubble"><a href="#/u/${encodeURIComponent(a.username||'')}"><b>${esc(nameOf(a))}</b>${badge(a)}</a><p>${esc(c.body)}</p></div>
+    <small>${ago(c.created_at)}${can?` · <span class="link" style="font-weight:500" onclick="delComment('${c.id}','${c.post_id||post.id}')">حذف</span>`:''}</small></div></div>`;
+}
+async function addComment(e,postId){
+  e.preventDefault();
+  const inp=$('#cIn'), body=inp.value.trim(); if(!body) return;
+  $('#cBtn').disabled=true;
+  const {data,error}=await sb.from('lg_comments').insert({post_id:postId,user_id:S.me.id,body}).select('id,body,created_at,user_id,post_id').single();
+  $('#cBtn').disabled=false;
+  if(error) return fail(error,'تعذّر نشر التعليق');
+  data.author=S.me; inp.value='';
+  $('#noc')?.remove();
+  $('#clist').insertAdjacentHTML('beforeend',cmtHTML(data,S.posts.get(postId)));
+  const p=S.posts.get(postId); if(p){p.cCount++; const a=document.querySelector(`#post-${postId} a.act span`); if(a) a.textContent=fmt(p.cCount)}
+}
+async function delComment(id,postId){
+  if(!confirm('حذف التعليق؟')) return;
+  const {error}=await sb.from('lg_comments').delete().eq('id',id);
+  if(error) return fail(error,'تعذّر الحذف');
+  $('#c-'+id)?.remove();
+  const p=S.posts.get(postId); if(p){p.cCount=Math.max(0,p.cCount-1); const a=document.querySelector(`#post-${postId} a.act span`); if(a) a.textContent=fmt(p.cCount)}
+}
+
+/* ---------- create ---------- */
+let draft={file:null,cat:'General'};
+function renderCreate(){
+  draft={file:null,cat:S.me.specialty&&CATS.some(c=>c.k===S.me.specialty)?S.me.specialty:'General'};
+  shell('new',`
+    <div class="page-head"><h2>منشور جديد</h2></div>
+    <div class="create glass">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">${avatar(S.me,44)}<div><b>${esc(nameOf(S.me))}</b><div class="muted" style="font-size:13px">ينشر للجميع</div></div></div>
+      <textarea class="input" id="body" placeholder="شارك حالة تعليمية، ملاحظة جودة، أو سؤالاً للزملاء…" maxlength="2000" oninput="$('#cnt').textContent=this.value.length+' / 2000'"></textarea>
+      <div class="counter" id="cnt">0 / 2000</div>
+      <div class="field"><label>القسم</label></div>
+      <div class="pick" id="pick">${CATS.map(c=>`<button type="button" data-k="${c.k}" class="${draft.cat===c.k?'on':''}" onclick="pickCat(this)">${c.e} ${c.ar}</button>`).join('')}</div>
+      <input type="file" id="file" accept="image/*" hidden>
+      <div class="drop" id="drop" onclick="$('#file').click()">
+        <div>${ic('image')}<div style="margin-top:6px;font-weight:600">أضف صورة (اختياري)</div><div style="font-size:13px">اسحبها هنا أو اضغط للاختيار</div></div>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin:12px 0 16px">⚠️ تأكد من إزالة أي بيانات تعريفية للمرضى من الصور والنص.</p>
+      <button class="btn btn-primary btn-block" id="pubBtn" onclick="publish()">نشر</button>
+    </div>`,{aside:false});
+  const drop=$('#drop'), file=$('#file');
+  file.onchange=()=>setFile(file.files[0]);
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+  drop.addEventListener('drop',e=>setFile(e.dataTransfer.files[0]));
+  $('#body').focus();
+}
+function pickCat(b){draft.cat=b.dataset.k;document.querySelectorAll('#pick button').forEach(x=>x.classList.toggle('on',x===b))}
+function setFile(f){
+  if(!f) return; if(!f.type.startsWith('image/')) return toast('اختر ملف صورة');
+  draft.file=f;
+  const url=URL.createObjectURL(f);
+  $('#drop').innerHTML=`<img src="${url}" alt=""><button class="icon-btn rm" onclick="event.stopPropagation();clearFile()">${ic('x')}</button>`;
+}
+function clearFile(){draft.file=null;$('#file').value='';$('#drop').innerHTML=`<div>${ic('image')}<div style="margin-top:6px;font-weight:600">أضف صورة (اختياري)</div><div style="font-size:13px">اسحبها هنا أو اضغط للاختيار</div></div>`}
+
+async function compress(file,max=1600){
+  if(file.type==='image/gif' || file.size<350*1024) return file;
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
+  const k=Math.min(1,max/Math.max(img.width,img.height));
+  const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));
+  return blob && blob.size<file.size ? new File([blob],'img.jpg',{type:'image/jpeg'}) : file;
+}
+async function upload(file,folder='posts'){
+  const f=await compress(file);
+  if(f.size>5*1024*1024) throw new Error('الصورة أكبر من 5MB');
+  const ext=(f.type.split('/')[1]||'jpg').replace('jpeg','jpg');
+  const path=`${S.me.id}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const {error}=await sb.storage.from(BUCKET).upload(path,f,{contentType:f.type,cacheControl:'31536000'});
+  if(error) throw error;
+  return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+async function publish(){
+  const body=$('#body').value.trim();
+  if(!body && !draft.file) return toast('اكتب شيئاً أو أضف صورة');
+  const b=$('#pubBtn'); b.disabled=true; b.innerHTML='<span class="spin"></span> جارٍ النشر…';
+  try{
+    const image_url = draft.file ? await upload(draft.file) : null;
+    const {error}=await sb.from('lg_posts').insert({user_id:S.me.id,body,image_url,category:draft.cat});
+    if(error) throw error;
+    toast('تم النشر 🎉'); location.hash='#/';
+  }catch(e){
+    b.disabled=false; b.textContent='نشر';
+    if(isSetupError(e)) return renderSetup(e);
+    console.error(e); toast(/Bucket not found/i.test(e.message)?'مخزن الصور غير مجهز — شغّل schema.sql':'تعذّر النشر: '+(e.message||''));
   }
 }
 
-// ============================================================
-// دالة تسجيل الدخول
-// ============================================================
+/* =====================================================================
+   PROFILE
+   ===================================================================== */
+async function renderProfile(username,tok){
+  tok=tok??routeToken;
+  const mine = username===S.me.username;
+  shell(mine?'me':'',`<div id="pf"><div class="skel glass" style="height:340px"></div></div>`);
+  const {data:p,error}=await sb.from('lg_profiles').select('*').eq('username',username).maybeSingle();
+  if(stale(tok)) return;
+  if(error) return fail(error);
+  if(!p){ $('#pf').innerHTML=`<div class="empty glass"><div class="big">🔍</div><b>المستخدم غير موجود</b></div>`; return }
+  const [posts,fers,fing]=await Promise.all([
+    sb.from('lg_posts').select(POST_SEL).eq('user_id',p.id).order('created_at',{ascending:false}).limit(60),
+    sb.from('lg_follows').select('follower_id',{count:'exact',head:true}).eq('following_id',p.id),
+    sb.from('lg_follows').select('following_id',{count:'exact',head:true}).eq('follower_id',p.id),
+  ]);
+  if(stale(tok)) return;
+  const list=(posts.data||[]).map(norm), isMe=p.id===S.me.id, following=S.followIds.has(p.id), c=cat(p.specialty);
+  $('#pf').innerHTML=`
+    <section class="prof glass">
+      <div class="cover" style="background:${COVERS[p.cover]||COVERS.aurora}"></div>
+      <div class="prof-main">
+        <div class="prof-top">${avatar(p,104)}
+          ${isMe?`<a class="btn btn-ghost btn-sm" href="#/settings">${ic('gear')} تعديل الملف</a>`
+            :`<button class="btn ${following?'btn-ghost':'btn-primary'} btn-sm" id="fbtn" onclick="follow('${p.id}',this,true)">${following?'تتابعه ✓':'متابعة'}</button>`}
+        </div>
+        <h2>${esc(nameOf(p))}${badge(p)}</h2>
+        <div class="handle">@${esc(p.username)}</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><span class="chip">${c.e} ${c.ar}</span>${p.role==='owner'?'<span class="chip" style="background:rgba(236,72,153,.12);color:var(--pink)">⭐ مالك المنصة</span>':''}</div>
+        ${p.bio?`<div class="bio">${esc(p.bio)}</div>`:''}
+        <div class="stats">
+          <div><b>${fmt(list.length)}</b><span>منشورات</span></div>
+          <div><b id="fcount">${fmt(fers.count)}</b><span>متابِعون</span></div>
+          <div><b>${fmt(fing.count)}</b><span>يتابع</span></div>
+        </div>
+      </div>
+    </section>
+    ${list.length?`<div class="grid">${list.map(x=>`
+      <a class="tile ${x.image_url?'':'text'}" href="#/p/${x.id}">
+        ${x.image_url?`<img src="${esc(x.image_url)}" alt="" loading="lazy">`:`<span>${esc(x.body)}</span>`}
+        <div class="ov"><span>${ic('heart')} ${fmt(x.likeSet.size)}</span><span>${ic('chat')} ${fmt(x.cCount)}</span></div>
+      </a>`).join('')}</div>`
+    :`<div class="empty glass"><div class="big">📷</div><b>لا توجد منشورات بعد</b>${isMe?'<p>شارك أول منشور لك!</p><a class="btn btn-primary" style="margin-top:14px" href="#/new">منشور جديد</a>':''}</div>`}`;
+  $('#fcount')?.setAttribute('data-n',fers.count||0);
+}
+async function follow(id,btn,onProfile=false){
+  const was=S.followIds.has(id); btn.disabled=true;
+  const {error}= was ? await sb.from('lg_follows').delete().eq('follower_id',S.me.id).eq('following_id',id)
+                     : await sb.from('lg_follows').insert({follower_id:S.me.id,following_id:id});
+  btn.disabled=false;
+  if(error && error.code!=='23505') return fail(error,'تعذّرت العملية');
+  was?S.followIds.delete(id):S.followIds.add(id);
+  const now=!was;
+  btn.textContent = now ? (onProfile?'تتابعه ✓':'تتابعه') : 'متابعة';
+  btn.classList.toggle('btn-primary',!now && onProfile); btn.classList.toggle('btn-ghost',now || !onProfile);
+  const fc=$('#fcount'); if(onProfile&&fc){const n=(+fc.dataset.n||0)+(now?1:-1);fc.dataset.n=n;fc.textContent=fmt(n)}
+  if(now) toast('تمت المتابعة 👥');
+}
 
-async function login(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const err = document.getElementById('loginErr');
-  err.textContent = '';
-  
-  if(!email || !pass){
-    err.textContent = 'أدخل البريد وكلمة المرور';
-    return;
+/* =====================================================================
+   EXPLORE
+   ===================================================================== */
+async function renderExplore(q0='',tok){
+  tok=tok??routeToken;
+  shell('explore',`
+    <div class="page-head"><h2>استكشاف</h2></div>
+    <div class="search">${ic('search')}<input class="input glass" id="q" placeholder="ابحث عن زميل بالاسم أو اسم المستخدم أو التخصص…" value="${esc(q0)}" autocomplete="off"></div>
+    <div class="glass list" id="people"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>
+    <div class="page-head" style="margin-top:26px"><h2 style="font-size:19px">أحدث الصور</h2></div>
+    <div class="grid" id="gal"></div>`,{aside:true});
+  let t; $('#q').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>searchPeople(e.target.value),250)});
+  searchPeople(q0);
+  const {data}=await sb.from('lg_posts').select(POST_SEL).not('image_url','is',null).order('created_at',{ascending:false}).limit(24);
+  if(stale(tok)||!$('#gal')) return;
+  $('#gal').innerHTML=(data||[]).map(norm).map(x=>`<a class="tile" href="#/p/${x.id}"><img src="${esc(x.image_url)}" alt="" loading="lazy"><div class="ov"><span>${ic('heart')} ${fmt(x.likeSet.size)}</span><span>${ic('chat')} ${fmt(x.cCount)}</span></div></a>`).join('') || `<p class="muted">لا توجد صور بعد.</p>`;
+}
+async function searchPeople(q){
+  q=(q||'').trim().replace(/[,()%*\\]/g,'');
+  let r=sb.from('lg_profiles').select('id,username,display_name,avatar_url,specialty,bio,role').neq('id',S.me.id).limit(20);
+  if(q){
+    const specs=CATS.filter(c=>c.ar.includes(q)).map(c=>c.k);
+    let ors=`username.ilike.%${q}%,display_name.ilike.%${q}%,specialty.ilike.%${q}%`;
+    specs.forEach(s=>ors+=`,specialty.eq.${s}`);
+    r=r.or(ors);
+  } else r=r.order('created_at',{ascending:false});
+  const {data,error}=await r;
+  const box=$('#people'); if(!box) return;
+  if(error) return fail(error);
+  box.innerHTML = data.length ? data.map(p=>{const f=S.followIds.has(p.id);return `
+    <div class="row">
+      <a href="#/u/${encodeURIComponent(p.username)}">${avatar(p,48)}</a>
+      <a class="who" href="#/u/${encodeURIComponent(p.username)}"><b>${esc(nameOf(p))}</b>${badge(p)}<br><small><span dir="ltr">@${esc(p.username)}</span> · ${cat(p.specialty).e} ${cat(p.specialty).ar}</small></a>
+      <button class="btn ${f?'btn-ghost':'btn-primary'} btn-sm" onclick="follow('${p.id}',this)">${f?'تتابعه':'متابعة'}</button>
+    </div>`}).join('') : `<div class="empty" style="padding:30px"><b>لا نتائج</b><p>جرّب كلمة أخرى.</p></div>`;
+}
+
+/* =====================================================================
+   NOTIFICATIONS
+   ===================================================================== */
+async function renderNotifications(tok){
+  tok=tok??routeToken;
+  shell('notifications',`<div class="page-head"><h2>التنبيهات</h2></div><div class="glass list" id="nl"><div class="muted" style="padding:16px">جارٍ التحميل…</div></div>`);
+  const {data,error}=await sb.from('lg_notifications')
+    .select('id,type,read,created_at,post_id,actor:lg_profiles!lg_notifications_actor_id_fkey(id,username,display_name,avatar_url,role)')
+    .eq('user_id',S.me.id).order('created_at',{ascending:false}).limit(60);
+  if(stale(tok)) return;
+  if(error) return fail(error);
+  const T={like:['أعجب بمنشورك','heart','#ec4899'],comment:['علّق على منشورك','chat','#6d5dfc'],follow:['بدأ بمتابعتك','user','#06b6d4']};
+  $('#nl').innerHTML = data.length ? data.map(n=>{
+    const a=n.actor||{}, t=T[n.type]||T.like, href=n.post_id?'#/p/'+n.post_id:'#/u/'+encodeURIComponent(a.username||'');
+    return `<a class="row notif ${n.read?'':'unread'}" href="${href}">
+      <span style="position:relative">${avatar(a,48)}<span class="ic" style="background:${t[2]}">${ic(t[1])}</span></span>
+      <span class="who"><b>${esc(nameOf(a))}</b>${badge(a)} ${t[0]}<br><small>${ago(n.created_at)}</small></span>
+    </a>`}).join('') : `<div class="empty"><div class="big">🔔</div><b>لا توجد تنبيهات</b><p>ستظهر هنا الإعجابات والتعليقات والمتابعات.</p></div>`;
+  if(data.some(n=>!n.read)){
+    await sb.from('lg_notifications').update({read:true}).eq('user_id',S.me.id).eq('read',false);
+    refreshUnread();
   }
-  
-  try {
-    toast('جاري تسجيل الدخول...');
-    
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: email,
-      password: pass
-    });
-    
-    if(error){
-      err.textContent = 'خطأ: ' + error.message;
-      toast('فشل تسجيل الدخول ❌');
-      return;
+}
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+let newAvatar=null;
+function renderSettings(){
+  const me=S.me; newAvatar=null;
+  shell('settings',`
+    <div class="page-head"><h2>الإعدادات</h2></div>
+    <div class="create glass">
+      <div class="av-edit"><span id="avPrev">${avatar(me,84)}</span>
+        <div><button class="btn btn-ghost btn-sm" onclick="$('#avFile').click()">${ic('image')} تغيير الصورة</button>
+        ${me.avatar_url?`<button class="btn btn-danger btn-sm" style="margin-inline-start:6px" onclick="newAvatar='remove';$('#avPrev').innerHTML=avatar({...S.me,avatar_url:null},84)">إزالة</button>`:''}
+        <input type="file" id="avFile" accept="image/*" hidden></div></div>
+      <div class="field"><label>الاسم الكامل</label><input class="input" id="sName" value="${esc(me.display_name||'')}" maxlength="60"></div>
+      <div class="field"><label>اسم المستخدم</label><input class="input" id="sUser" dir="ltr" value="${esc(me.username)}" maxlength="30"></div>
+      <div class="field"><label>التخصص</label><select class="input" id="sSpec">${CATS.map(c=>`<option value="${c.k}" ${me.specialty===c.k?'selected':''}>${c.e} ${c.ar}</option>`).join('')}</select></div>
+      <div class="field"><label>نبذة</label><textarea class="input" id="sBio" maxlength="300" style="min-height:90px" placeholder="مثال: مشرف مختبر الأنسجة · ISO 15189">${esc(me.bio||'')}</textarea></div>
+      <div class="field"><label>خلفية الملف الشخصي</label></div>
+      <div class="covers">${Object.entries(COVERS).map(([k,v])=>`<button type="button" data-k="${k}" class="${(me.cover||'aurora')===k?'on':''}" style="background:${v}" onclick="document.querySelectorAll('.covers button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="${k}"></button>`).join('')}</div>
+      <div class="msg" id="fMsg"></div>
+      <button class="btn btn-primary btn-block" id="fBtn" onclick="saveSettings()">حفظ التغييرات</button>
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="flex:1" onclick="toggleTheme()">${ic(theme()==='dark'?'sun':'moon')} ${theme()==='dark'?'الوضع النهاري':'الوضع الليلي'}</button>
+        <button class="btn btn-danger" style="flex:1" onclick="logout()">${ic('out')} تسجيل الخروج</button>
+      </div>
+    </div>`,{aside:false});
+  $('#avFile').onchange=e=>{const f=e.target.files[0];if(!f)return;newAvatar=f;$('#avPrev').innerHTML=`<img class="av" style="--s:84px" src="${URL.createObjectURL(f)}">`};
+}
+async function saveSettings(){
+  const username=$('#sUser').value.trim();
+  if(!USER_RE.test(username)) return setMsg('اسم المستخدم 3–30 حرفاً إنجليزياً أو أرقاماً أو _ .');
+  const upd={display_name:$('#sName').value.trim(),username,specialty:$('#sSpec').value,bio:$('#sBio').value.trim(),cover:document.querySelector('.covers button.on')?.dataset.k||'aurora'};
+  busy(true);
+  try{
+    if(newAvatar==='remove') upd.avatar_url=null;
+    else if(newAvatar) upd.avatar_url=await upload(newAvatar,'avatars');
+    const {data,error}=await sb.from('lg_profiles').update(upd).eq('id',S.me.id).select().single();
+    if(error) throw error;
+    S.me=data; toast('تم الحفظ ✅'); location.hash='#/u/'+encodeURIComponent(data.username);
+  }catch(e){
+    busy(false);
+    setMsg(e.code==='23505'?'اسم المستخدم محجوز':'تعذّر الحفظ: '+(e.message||''));
+  }
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+async function setSession(session){
+  S.user=session?.user||null;
+  try{ await loadMe() }catch(e){ if(isSetupError(e)) { S.setupErr=e; } else console.error(e) }
+}
+(async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  await setSession(session);
+  if(S.setupErr) return renderSetup(S.setupErr);
+  route();
+  sb.auth.onAuthStateChange((ev,s)=>{
+    if(ev==='PASSWORD_RECOVERY'){ S.recovery=true; setTimeout(route,0); return }
+    if(ev==='SIGNED_IN' && s?.user?.id===S.user?.id && S.me) return;
+    if(ev==='SIGNED_IN'||ev==='SIGNED_OUT'){
+      setTimeout(async()=>{ S.setupErr=null; await setSession(s); if(S.setupErr) return renderSetup(S.setupErr);
+        if(ev==='SIGNED_IN' && /access_token|type=/.test(location.hash)) location.hash='#/';
+        route(); },0);
     }
-    
-    toast('مرحباً بك! 🎉');
-    window.location.href = 'feed.html';
-    
-  } catch(e){
-    err.textContent = 'خطأ غير متوقع: ' + e.message;
-    toast('حدث خطأ ❌');
-  }
-}
-
-// ============================================================
-// التحقق من الجلسة عند فتح الصفحة
-// ============================================================
-
-async function checkSession(){
-  const { data: { session } } = await sb.auth.getSession();
-  if(session){
-    // إذا كان مسجل دخول، روح للصفحة الرئيسية
-    window.location.href = 'feed.html';
-  }
-}
-
-checkSession();
-
-// ============================================================
-// عرض نموذج تسجيل الدخول افتراضياً
-// ============================================================
-
-// ابدأ بصفحة التسجيل
-showRegister();
-
-// للاختبار: ضع بريد مام في حقل البريد تلقائياً
-// document.getElementById('email').value = 'mam87soudi@gmail.com';
-// document.getElementById('username').value = 'mam87';
-// document.getElementById('display').value = 'Mam87 Soudi';
-
-console.log('✅ LabGram جاهز!');
-console.log('📧 استخدم mam87soudi@gmail.com للتسجيل');
+  });
+  addEventListener('hashchange',()=>{ if(/access_token|error_description/.test(location.hash)) return; route() });
+  setInterval(refreshUnread,60000);
+})();
 </script>
-
 </body>
 </html>
